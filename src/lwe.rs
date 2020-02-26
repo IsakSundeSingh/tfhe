@@ -75,6 +75,7 @@ impl TFheGateBootstrappingSecretKeySet {
   }
 }
 
+#[derive(Debug)]
 pub struct LweKey {
   params: LweParams,
   key: Vec<i32>,
@@ -147,7 +148,7 @@ impl LweKey {
 //this pub structure is constant (cannot be modified once initialized):
 //the pointer to the param can be passed directly
 //to all the Lwe keys that use these params.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LweParams {
   n: i32,
   /// le plus petit bruit tq sur
@@ -214,4 +215,42 @@ pub struct LweKeySwitchKey {
   /// the keyswitch elements: a n.l.base matrix
   ks: Vec<Vec<LweSample>>,
   // of size n points to ks1 an array whose boxes are spaced by ell positions
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn generate_parameters() -> Vec<LweParams> {
+    vec![
+      LweParams::new(500, 0f64, 1f64),
+      LweParams::new(700, 0f64, 1f64),
+      LweParams::new(1024, 0f64, 1f64),
+    ]
+  }
+
+  #[test]
+  fn assert_lwe_key() {
+    for param in generate_parameters() {
+      let key = LweKey::generate(param);
+      let n = key.params.n;
+      let s = key.key;
+      // Ensure key is binary
+      let mut count = 0;
+      for i in 0..n {
+        assert!(s[i as usize] == 0 || s[i as usize] == 1);
+        count += s[i as usize];
+      }
+
+      // Sort of useless, isn't it?
+      assert!(count <= n - 20);
+      assert!(count >= 20);
+    }
+  }
+
+  #[test]
+  #[ignore]
+  fn test_encryption_decryption() {
+    unimplemented!()
+  }
 }
