@@ -1,5 +1,6 @@
 use crate::tlwe::{IntPolynomial, TLweKey, TLweParameters, TLweSample, TLweSampleFFT, Torus32};
 
+#[derive(Clone)]
 pub struct TGswParams {
   /// decomp length
   l: i32,

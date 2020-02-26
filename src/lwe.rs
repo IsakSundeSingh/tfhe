@@ -9,6 +9,7 @@ pub struct LweSample {
   current_variance: f64,
 }
 
+#[derive(Clone)]
 pub struct TFHEGateBootstrappingParameterSet {
   ks_t: i32,
   ks_base_bit: i32,
@@ -38,11 +39,38 @@ pub struct TFHEGateBootstrappingCloudKeySet {
   bk_fft: LweBootstrappingKeyFFT,
 }
 
+impl TFHEGateBootstrappingCloudKeySet {
+  pub fn new(
+    params: TFHEGateBootstrappingParameterSet,
+    bk: LweBootstrappingKey,
+    bk_fft: LweBootstrappingKeyFFT,
+  ) -> Self {
+    Self { params, bk, bk_fft }
+  }
+}
+
 pub struct TFheGateBootstrappingSecretKeySet {
   params: TFHEGateBootstrappingParameterSet,
   lwe_key: LweKey,
   tgsw_key: TGswKey,
   cloud: TFHEGateBootstrappingCloudKeySet,
+}
+impl TFheGateBootstrappingSecretKeySet {
+  pub fn new(
+    params: TFHEGateBootstrappingParameterSet,
+    bk: LweBootstrappingKey,
+    bk_fft: LweBootstrappingKeyFFT,
+    lwe_key: LweKey,
+    tgsw_key: TGswKey,
+  ) -> Self {
+    let cloud = TFHEGateBootstrappingCloudKeySet::new(params.clone(), bk, bk_fft);
+    Self {
+      params,
+      lwe_key,
+      tgsw_key,
+      cloud,
+    }
+  }
 }
 
 pub struct LweKey {
@@ -55,6 +83,7 @@ pub struct LweKey {
 //this pub structure is constant (cannot be modified once initialized):
 //the pointer to the param can be passed directly
 //to all the Lwe keys that use these params.
+#[derive(Clone)]
 pub struct LweParams {
   n: i32,
   /// le plus petit bruit tq sur
