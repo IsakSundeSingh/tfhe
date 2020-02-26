@@ -1,8 +1,9 @@
 use crate::lwe::{
-  LweSample, TFHEGateBootstrappingCloudKeySet, TFHEGateBootstrappingParameterSet,
+  LweParams, LweSample, TFHEGateBootstrappingCloudKeySet, TFHEGateBootstrappingParameterSet,
   TFheGateBootstrappingSecretKeySet,
 };
-
+use crate::tlwe::TLweParameters;
+use crate::tsgw::TGswParams;
 //////////////////////////////////////////
 // Gate bootstrapping public interface
 //////////////////////////////////////////
@@ -10,7 +11,28 @@ use crate::lwe::{
 pub fn new_default_gate_bootstrapping_parameters(
   minimum_lambda: i32,
 ) -> TFHEGateBootstrappingParameterSet {
-  unimplemented!()
+  if minimum_lambda > 128 {
+    panic!("Sorry, for now, the parameters are only implemented for about 128bit of security!");
+  }
+
+  const N: i32 = 1024;
+  const k: i32 = 1;
+  const n: i32 = 500;
+  const bk_l: i32 = 2;
+  const bk_Bgbit: i32 = 10;
+  const ks_basebit: i32 = 2;
+  const ks_length: i32 = 8;
+  const ks_stdev: f64 = 2.44e-5; //standard deviation
+  const bk_stdev: f64 = 7.18e-9; //standard deviation
+  const max_stdev: f64 = 0.012467; //max standard deviation for a 1/4 msg space
+  let params_in: LweParams = LweParams::new(n, ks_stdev, max_stdev);
+  let params_accum: TLweParameters = TLweParameters::new(N, k, bk_stdev, max_stdev);
+  let params_bk: TGswParams = TGswParams::new(bk_l, bk_Bgbit, params_accum);
+
+  // TfheGarbageCollector::register_param(params_in);
+  // TfheGarbageCollector::register_param(params_accum);
+  // TfheGarbageCollector::register_param(params_bk);
+  TFHEGateBootstrappingParameterSet::new(ks_length, ks_basebit, params_in, params_bk)
 }
 
 /** generate a random gate bootstrapping secret key */

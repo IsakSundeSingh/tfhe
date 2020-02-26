@@ -30,7 +30,7 @@ pub struct TGswParams {
 }
 
 impl TGswParams {
-  fn new(l: i32, bg_bit: i32, tlwe_params: TLweParameters) -> Self {
+  pub fn new(l: i32, bg_bit: i32, tlwe_params: TLweParameters) -> Self {
     let bg = (1 << bg_bit) as i32;
     let half_bg = (bg >> 1) as i32;
     let mask_mod = (bg - 1) as u32;

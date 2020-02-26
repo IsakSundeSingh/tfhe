@@ -5,6 +5,16 @@ pub struct LWEParams {
   alpha_max: f64,
 }
 
+impl LWEParams {
+  pub fn new(n: i32, alpha_min: f64, alpha_max: f64) -> Self {
+    Self {
+      n,
+      alpha_min,
+      alpha_max,
+    }
+  }
+}
+
 #[derive(Clone)]
 pub struct TLweParameters {
   /// a power of 2: degree of the polynomials
@@ -20,17 +30,13 @@ pub struct TLweParameters {
 }
 
 impl TLweParameters {
-  fn new(n: i32, k: i32, alpha_min: f64, alpha_max: f64) -> Self {
+  pub fn new(n: i32, k: i32, alpha_min: f64, alpha_max: f64) -> Self {
     Self {
       n,
       k,
       alpha_min,
       alpha_max,
-      extracted_lweparams: LWEParams {
-        n: n * k,
-        alpha_min,
-        alpha_max,
-      },
+      extracted_lweparams: LWEParams::new(n * k, alpha_min, alpha_max),
     }
   }
 }

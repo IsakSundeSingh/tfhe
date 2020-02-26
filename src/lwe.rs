@@ -16,6 +16,22 @@ pub struct TFHEGateBootstrappingParameterSet {
   tgsw_params: TGswParams,
 }
 
+impl TFHEGateBootstrappingParameterSet {
+  pub fn new(
+    ks_t: i32,
+    ks_base_bit: i32,
+    in_out_params: LweParams,
+    tgsw_params: TGswParams,
+  ) -> Self {
+    Self {
+      ks_t,
+      ks_base_bit,
+      in_out_params,
+      tgsw_params,
+    }
+  }
+}
+
 pub struct TFHEGateBootstrappingCloudKeySet {
   params: TFHEGateBootstrappingParameterSet,
   bk: LweBootstrappingKey,
@@ -45,6 +61,16 @@ pub struct LweParams {
   alpha_min: f64,
   /// le plus gd bruit qui permet le déchiffrement
   alpha_max: f64,
+}
+
+impl LweParams {
+  pub fn new(n: i32, alpha_min: f64, alpha_max: f64) -> Self {
+    Self {
+      n,
+      alpha_min,
+      alpha_max,
+    }
+  }
 }
 
 pub struct LweBootstrappingKey {
