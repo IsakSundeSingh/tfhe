@@ -1,6 +1,6 @@
 use crate::tlwe::{IntPolynomial, TLweKey, TLweParameters, TLweSample, TLweSampleFFT, Torus32};
 
-struct TGswParams {
+pub struct TGswParams {
   /// decomp length
   l: i32,
 
@@ -61,7 +61,7 @@ impl TGswParams {
   }
 }
 
-struct TGswKey {
+pub struct TGswKey {
   /// the parameters
   params: TGswParams,
 
@@ -89,17 +89,17 @@ struct TGswKey {
 //   }
 // }
 
-struct TGswSample {
+pub struct TGswSample {
   /// (k+1)l TLwe Sample
   all_sample: TLweSample,
   /// optional access to the different size blocks l
   bloc_sample: Vec<Vec<TLweSample>>,
-  current_variance: f32,
+  current_variance: f64,
   k: i32,
   l: i32,
 }
 
-struct TGswSampleFFT {
+pub struct TGswSampleFFT {
   /// TLweSample* all_sample; (k+1)l TLwe Sample
   all_samples: Vec<TLweSampleFFT>,
   //   TLweSampleFFT **sample; /// optional access to the different size blocks l

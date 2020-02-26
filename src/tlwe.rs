@@ -1,26 +1,26 @@
 #[derive(Clone)]
-pub(crate) struct LWEParams {
+pub struct LWEParams {
   n: i32,
-  alpha_min: f32,
-  alpha_max: f32,
+  alpha_min: f64,
+  alpha_max: f64,
 }
 
 #[derive(Clone)]
-pub(crate) struct TLweParameters {
+pub struct TLweParameters {
   /// a power of 2: degree of the polynomials
-  pub(crate) n: i32,
+  pub n: i32,
   /// number of polynomials in the mask
-  pub(crate) k: i32,
+  pub k: i32,
   /// minimal noise s.t. the sample is secure
-  pub(crate) alpha_min: f32,
+  pub alpha_min: f64,
   /// maximal noise s.t. we can decrypt
-  pub(crate) alpha_max: f32,
+  pub alpha_max: f64,
   /// lwe params if one extracts
-  pub(crate) extracted_lweparams: LWEParams,
+  pub extracted_lweparams: LWEParams,
 }
 
 impl TLweParameters {
-  fn new(n: i32, k: i32, alpha_min: f32, alpha_max: f32) -> Self {
+  fn new(n: i32, k: i32, alpha_min: f64, alpha_max: f64) -> Self {
     Self {
       n,
       k,
@@ -36,7 +36,7 @@ impl TLweParameters {
 }
 
 #[derive(Clone)]
-pub(crate) struct IntPolynomial {
+pub struct IntPolynomial {
   n: i32,
   coefs: Vec<i32>,
 }
@@ -50,7 +50,7 @@ impl IntPolynomial {
   }
 }
 
-pub(crate) struct TLweKey {
+pub struct TLweKey {
   /// Parameters of the key
   params: TLweParameters,
   /// the key (i.e k binary polynomials)
@@ -73,21 +73,21 @@ impl TLweKey {
 ///  -- modulo 1 is mapped to mod 2^32, which is also native!
 /// This looks much better than using float/doubles, where modulo 1 is not
 /// natural at all.
-pub(crate) type Torus32 = i32;
+pub type Torus32 = i32;
 
 struct TorusPolynomial {
   n: i32,
   coefs: Vec<Torus32>,
 }
 
-pub(crate) struct TLweSample {
+pub struct TLweSample {
   /// array of length k+1: mask + right term
   a: TorusPolynomial,
   /// FIXME: This is some C++ shit. b is actually referring to a single value within a
   /// alias of a[k] to get the right term
   b: TorusPolynomial,
   /// avg variance of the sample
-  current_variance: f32,
+  current_variance: f64,
   k: i32,
 }
 
@@ -113,14 +113,14 @@ struct LagrangeHalfCPolynomial<Data, Precomp> {
 }
 
 #[derive(Clone)]
-pub(crate) struct TLweSampleFFT {
+pub struct TLweSampleFFT {
   /// array of length k+1: mask + right term
   a: Vec<LagrangeHalfCPolynomial<u8, u8>>,
   /// FIXME: This is some C++ shit. b is actually referring to a single value within a
   /// alias of a[k] to get the right term
   b: LagrangeHalfCPolynomial<u8, u8>,
   /// avg variance of the sample
-  current_variance: f32,
+  current_variance: f64,
   /// TODO: Figure out if this is required...
   /// required during the destructor call...
   k: i32,
@@ -129,7 +129,7 @@ impl TLweSampleFFT {
   fn new(
     params: TLweParameters,
     arr: Vec<LagrangeHalfCPolynomial<u8, u8>>,
-    current_variance: f32,
+    current_variance: f64,
   ) -> Self {
     let k = params.k;
     let b = (&arr[k as usize]).clone();
