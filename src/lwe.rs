@@ -1,6 +1,8 @@
 use crate::tlwe::{TLweParameters, Torus32};
 use crate::tsgw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
 
+use crate::numerics::gaussian32;
+
 pub struct LweSample {
   /// The coefficients of the mask
   coefficients: Vec<Torus32>,
@@ -11,10 +13,10 @@ pub struct LweSample {
 
 #[derive(Clone)]
 pub struct TFHEGateBootstrappingParameterSet {
-  ks_t: i32,
-  ks_base_bit: i32,
-  in_out_params: LweParams,
-  tgsw_params: TGswParams,
+  pub ks_t: i32,
+  pub ks_base_bit: i32,
+  pub in_out_params: LweParams,
+  pub tgsw_params: TGswParams,
 }
 
 impl TFHEGateBootstrappingParameterSet {
@@ -75,10 +77,72 @@ impl TFheGateBootstrappingSecretKeySet {
 
 pub struct LweKey {
   params: LweParams,
-  key: i32,
-  // const LweParams* params;
-  // int32_t* key;
+  key: Vec<i32>,
 }
+
+impl LweKey {
+  /// Uses randomness to generate a key with the given parameters
+  ///
+  /// From C++:
+  /// This function generates a random Lwe key for the given parameters.
+  /// The Lwe key for the result must be allocated and initialized
+  /// (this means that the parameters are already in the result)
+  pub fn generate(params: LweParams) -> Self {
+    use rand::distributions::Distribution;
+
+    let n = params.n;
+    let d = rand::distributions::Uniform::new_inclusive(0, 1);
+
+    // TODO: Use cryptographically safe RNG
+    let mut rng = rand::thread_rng();
+    let key = (0..n).map(|_| d.sample(&mut rng)).collect();
+
+    Self { params, key }
+  }
+
+  /// This function encrypts message by using key, with stdev alpha
+  /// The Lwe sample for the result must be allocated and initialized
+  /// (this means that the parameters are already in the result)
+  pub fn encrypt(&self, result: &mut LweSample, message: Torus32, alpha: f64) {
+    use rand::distributions::Distribution;
+
+    let n = self.params.n;
+    result.b = gaussian32(message, alpha);
+    let d = rand::distributions::Uniform::new(i32::min_value(), i32::max_value());
+    let mut rng = rand::thread_rng();
+    for i in 0..n {
+      result.coefficients[i as usize] = d.sample(&mut rng);
+      result.b += result.coefficients[i as usize] * self.key[i as usize];
+    }
+    result.current_variance = alpha * alpha;
+  }
+
+  /*
+   * This function encrypts a message by using key and a given noise value
+   */
+
+  pub fn encrypt_with_external_noise(
+    &self,
+    result: &mut LweSample,
+    message: Torus32,
+    noise: f64,
+    alpha: f64,
+  ) {
+    use crate::numerics::f64_to_torus_32;
+    use rand::distributions::Distribution;
+
+    let n = self.params.n;
+    result.b = message + f64_to_torus_32(noise);
+    let d = rand::distributions::Uniform::new(i32::min_value(), i32::max_value());
+    let mut rng = rand::thread_rng();
+    for i in 0..n {
+      result.coefficients[i as usize] = d.sample(&mut rng);
+      result.b += result.coefficients[i as usize] * self.key[i as usize];
+    }
+    result.current_variance = alpha * alpha;
+  }
+}
+
 //this pub structure contains Lwe parameters
 //this pub structure is constant (cannot be modified once initialized):
 //the pointer to the param can be passed directly
