@@ -13,7 +13,7 @@ pub struct LweSample {
 }
 
 impl LweSample {
-  pub fn new(params: &LweParams) -> Self {
+  pub(crate) fn new(params: &LweParams) -> Self {
     Self {
       coefficients: vec![0; params.n as usize],
       b: 0,
@@ -289,20 +289,16 @@ mod tests {
   }
 
   #[test]
-  fn assert_lwe_key() {
-    for param in generate_parameters() {
-      let key = LweKey::generate(&param);
-      let n = key.params.n;
-      let s = key.key;
-
+  fn test_valid_key_generation() {
+    for key in generate_keys() {
       // Ensure key is binary
-      let count = s.iter().fold(0, |acc, &elem| {
+      let count = key.key.iter().fold(0, |acc, &elem| {
         assert!(elem == 0 || elem == 1);
         acc + elem
       });
 
       // Sort of useless, isn't it?
-      assert!(count <= n - 20);
+      assert!(count <= key.params.n - 20);
       assert!(count >= 20);
     }
   }
