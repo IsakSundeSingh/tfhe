@@ -284,7 +284,8 @@ mod tests {
   /// Frac:
   /// Return the integer nearest X in the direction of the prevailing rounding mode. (Default in C++ is `FE_TONEAREST`)
   fn abs_frac(x: f64) -> f64 {
-    x.round().abs()
+    // TODO: Figure out if this really should be truncating or using `f64::round()`
+    x.trunc().abs()
   }
 
   #[test]
