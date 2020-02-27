@@ -17,7 +17,7 @@ pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
 /// Weird and lossy conversion
 pub(crate) fn f64_to_torus_32(d: f64) -> Torus32 {
   // 2 ^ 32
-  const TWO_32: i64 = 4294967296;
+  const TWO_32: i64 = 4_294_967_296;
   let inner = d - ((d as i64) as f64);
   let x = (inner * TWO_32 as f64) as i64;
   x as Torus32
@@ -26,7 +26,7 @@ pub(crate) fn f64_to_torus_32(d: f64) -> Torus32 {
 
 pub(crate) fn torus_32_to_f64(x: Torus32) -> f64 {
   // 2 ^ 32
-  const TWO_32: f64 = 4294967296.0;
+  const TWO_32: f64 = 4_294_967_296.0;
   (x as f64) / TWO_32
 }
 

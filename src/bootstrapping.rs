@@ -1,6 +1,6 @@
 use crate::lwe::{
-  LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
-  TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
+  LweParams, LweSample, TFHEGateBootstrappingCloudKeySet, TFHEGateBootstrappingParameterSet,
+  TFheGateBootstrappingSecretKeySet,
 };
 use crate::tlwe::TLweParameters;
 use crate::tsgw::TGswParams;
@@ -17,23 +17,23 @@ pub fn new_default_gate_bootstrapping_parameters(
   }
 
   const N: i32 = 1024;
-  const k: i32 = 1;
-  const n: i32 = 500;
-  const bk_l: i32 = 2;
-  const bk_Bgbit: i32 = 10;
-  const ks_basebit: i32 = 2;
-  const ks_length: i32 = 8;
-  const ks_stdev: f64 = 2.44e-5; //standard deviation
-  const bk_stdev: f64 = 7.18e-9; //standard deviation
-  const max_stdev: f64 = 0.012467; //max standard deviation for a 1/4 msg space
-  let params_in: LweParams = LweParams::new(n, ks_stdev, max_stdev);
-  let params_accum: TLweParameters = TLweParameters::new(N, k, bk_stdev, max_stdev);
-  let params_bk: TGswParams = TGswParams::new(bk_l, bk_Bgbit, params_accum);
+  const K: i32 = 1;
+  const LOWERCASE_N: i32 = 500;
+  const BK_L: i32 = 2;
+  const BK_BG_BIT: i32 = 10;
+  const KS_BASE_BIT: i32 = 2;
+  const KS_LENGTH: i32 = 8;
+  const KS_STDEV: f64 = 2.44e-5; //standard deviation
+  const BK_STDEV: f64 = 7.18e-9; //standard deviation
+  const MAX_STDEV: f64 = 0.012_467; //max standard deviation for a 1/4 msg space
+  let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
+  let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
+  let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
 
   // TfheGarbageCollector::register_param(params_in);
   // TfheGarbageCollector::register_param(params_accum);
   // TfheGarbageCollector::register_param(params_bk);
-  TFHEGateBootstrappingParameterSet::new(ks_length, ks_basebit, params_in, params_bk)
+  TFHEGateBootstrappingParameterSet::new(KS_LENGTH, KS_BASE_BIT, params_in, params_bk)
 }
 
 /** generate a random gate bootstrapping secret key */
@@ -81,22 +81,22 @@ pub fn new_gate_bootstrapping_ciphertext_array(
 // pub fn void delete_gate_bootstrapping_ciphertext_array(int32_t nbelems, LweSample *samples);
 
 /** encrypts a boolean */
-pub fn bootsSymEncrypt(message: bool, params: &TFheGateBootstrappingSecretKeySet) -> LweSample {
+pub fn boots_sym_encrypt(message: bool, params: &TFheGateBootstrappingSecretKeySet) -> LweSample {
   unimplemented!()
 }
 
 /** decrypts a boolean */
-pub fn bootsSymDecrypt(sample: &LweSample, params: &TFheGateBootstrappingSecretKeySet) -> bool {
+pub fn boots_sym_decrypt(sample: &LweSample, params: &TFheGateBootstrappingSecretKeySet) -> bool {
   unimplemented!()
 }
 
 /** bootstrapped Constant (true or false) trivial Gate */
-pub fn bootsCONSTANT(value: i32, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_constant(value: i32, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   unimplemented!()
 }
 
 /** bootstrapped Nand Gate */
-pub fn bootsNAND(
+pub fn boots_nand(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -104,11 +104,15 @@ pub fn bootsNAND(
   unimplemented!()
 }
 /** bootstrapped Or Gate:  */
-pub fn bootsOR(ca: &LweSample, cb: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_or(
+  ca: &LweSample,
+  cb: &LweSample,
+  bk: &TFHEGateBootstrappingCloudKeySet,
+) -> LweSample {
   unimplemented!()
 }
 /** bootstrapped And Gate: result = a and b */
-pub fn bootsAND(
+pub fn boots_and(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -116,7 +120,7 @@ pub fn bootsAND(
   unimplemented!()
 }
 /** bootstrapped Xor Gate: result = a xor b */
-pub fn bootsXOR(
+pub fn boots_xor(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -124,7 +128,7 @@ pub fn bootsXOR(
   unimplemented!()
 }
 /** bootstrapped Xnor Gate: result = (a==b) */
-pub fn bootsXNOR(
+pub fn boots_xnor(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -132,16 +136,16 @@ pub fn bootsXNOR(
   unimplemented!()
 }
 /** bootstrapped Not Gate: result = not(a) */
-pub fn bootsNOT(ca: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_not(ca: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   unimplemented!()
 }
 
 /** bootstrapped Copy Gate: result = a */
-pub fn bootsCOPY(ca: LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_copy(ca: LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   unimplemented!()
 }
 /** bootstrapped Nor Gate: result = not(a or b) */
-pub fn bootsNOR(
+pub fn boots_nor(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -149,7 +153,7 @@ pub fn bootsNOR(
   unimplemented!()
 }
 /** bootstrapped AndNY Gate: not(a) and b */
-pub fn bootsANDNY(
+pub fn boots_andny(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -157,7 +161,7 @@ pub fn bootsANDNY(
   unimplemented!()
 }
 /** bootstrapped AndYN Gate: a and not(b) */
-pub fn bootsANDYN(
+pub fn boots_andyn(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -165,7 +169,7 @@ pub fn bootsANDYN(
   unimplemented!()
 }
 /** bootstrapped OrNY Gate: not(a) or b */
-pub fn bootsORNY(
+pub fn boots_orny(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -173,7 +177,7 @@ pub fn bootsORNY(
   unimplemented!()
 }
 /** bootstrapped OrYN Gate: a or not(b) */
-pub fn bootsORYN(
+pub fn boots_oryn(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
@@ -182,7 +186,7 @@ pub fn bootsORYN(
 }
 
 /** bootstrapped Mux(a,b,c) = a?b:c */
-pub fn bootsMUX(
+pub fn boots_mux(
   a: &LweSample,
   b: &LweSample,
   c: &LweSample,
