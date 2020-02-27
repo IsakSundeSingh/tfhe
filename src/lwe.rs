@@ -293,12 +293,12 @@ mod tests {
       let key = LweKey::generate(&param);
       let n = key.params.n;
       let s = key.key;
+
       // Ensure key is binary
-      let mut count = 0;
-      for i in 0..n {
-        assert!(s[i as usize] == 0 || s[i as usize] == 1);
-        count += s[i as usize];
-      }
+      let count = s.iter().fold(0, |acc, &elem| {
+        assert!(elem == 0 || elem == 1);
+        acc + elem
+      });
 
       // Sort of useless, isn't it?
       assert!(count <= n - 20);
