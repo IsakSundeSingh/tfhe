@@ -1,4 +1,5 @@
-use crate::tlwe::Torus32;
+use crate::tlwe::TorusPolynomial;
+use crate::tlwe::{IntPolynomial, Torus32};
 
 // Gaussian sample centered in message, with standard deviation sigma
 pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
@@ -64,4 +65,73 @@ pub(crate) fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32 {
 
   // Floor to the nearest multiples of interval
   (phase64 >> 32) as Torus32
+}
+
+pub(crate) fn torus_polynomial_mul_r(
+  result: &mut TorusPolynomial,
+  poly1: &IntPolynomial,
+  poly2: &TorusPolynomial,
+) {
+  let res = poly_multiplier(poly1, poly2);
+  assert_eq!(result.n, res.n);
+
+  result.coefs = result
+    .coefs
+    .iter()
+    .zip(res.coefs.iter())
+    .map(|(a, b)| a + b)
+    .collect();
+  // let tmp = crate::tlwe::LagrangeHalfCPolynomial
+  // const int32_t N = poly1->N;
+  // LagrangeHalfCPolynomial* tmp = new_LagrangeHalfCPolynomial_array(3,N);
+  // TorusPolynomial* tmpr = new_TorusPolynomial(N);
+  // IntPolynomial_ifft(tmp+0,poly1);
+  // TorusPolynomial_ifft(tmp+1,poly2);
+  // LagrangeHalfCPolynomialMul(tmp+2,tmp+0,tmp+1);
+  // TorusPolynomial_fft(tmpr, tmp+2);
+  // torusPolynomialAddTo(result, tmpr);
+  // delete_TorusPolynomial(tmpr);
+  // delete_LagrangeHalfCPolynomial_array(3,tmp);
+}
+
+fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
+  assert_eq!(a.n, a.coefs.len() as i32);
+  assert_eq!(b.n, b.coefs.len() as i32);
+
+  let degree = a.n + b.n - 2;
+  let mut coefs = vec![0; (degree + 1) as usize];
+
+  for i in 0..a.n {
+    for j in 0..b.n {
+      coefs[(i + j) as usize] += a.coefs[i as usize] * b.coefs[j as usize];
+    }
+  }
+
+  TorusPolynomial {
+    n: coefs.len() as i32,
+    coefs,
+  }
+}
+
+#[test]
+fn test_poly_multiplier() {
+  let a = IntPolynomial {
+    n: 3,
+    coefs: vec![10, 20, 30],
+  };
+
+  let b = TorusPolynomial {
+    n: 3,
+    coefs: vec![1, 2, 3],
+  };
+
+  let res = poly_multiplier(&a, &b);
+
+  assert_eq!(
+    res,
+    TorusPolynomial {
+      n: 5,
+      coefs: vec![10, 40, 100, 120, 90]
+    }
+  );
 }
