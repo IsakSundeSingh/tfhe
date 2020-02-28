@@ -62,6 +62,8 @@ impl std::ops::Sub<LweSample> for LweSample {
       .collect();
 
     let b = self.b.wrapping_sub(rhs.b);
+
+    #[allow(clippy::suspicious_arithmetic_impl)]
     let current_variance = self.current_variance + rhs.current_variance;
 
     Self {
