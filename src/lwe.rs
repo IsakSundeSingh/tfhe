@@ -3,7 +3,7 @@ use crate::tsgw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
 
 use crate::numerics::{approximate_phase, gaussian32};
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LweSample {
   /// The coefficients of the mask
   coefficients: Vec<Torus32>,
@@ -18,6 +18,56 @@ impl LweSample {
       coefficients: vec![0; params.n as usize],
       b: 0,
       current_variance: 0f64,
+    }
+  }
+}
+
+impl std::ops::Add<LweSample> for LweSample {
+  type Output = Self;
+  fn add(self, rhs: LweSample) -> LweSample {
+    assert_eq!(
+      self.coefficients.len(),
+      rhs.coefficients.len(),
+      "Cannot add samples with different sizes! lhs.len() = {}, rhs.len() = {}",
+      self.coefficients.len(),
+      rhs.coefficients.len()
+    );
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(rhs.coefficients)
+      .map(|(a, b)| a.wrapping_add(b))
+      .collect();
+
+    let b = self.b.wrapping_add(rhs.b);
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    Self {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+}
+
+impl std::ops::Sub<LweSample> for LweSample {
+  type Output = Self;
+  fn sub(self, rhs: LweSample) -> LweSample {
+    assert_eq!(self.coefficients.len(), rhs.coefficients.len());
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(rhs.coefficients)
+      .map(|(a, b)| a.wrapping_sub(b))
+      .collect();
+
+    let b = self.b.wrapping_sub(rhs.b);
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    Self {
+      coefficients,
+      b,
+      current_variance,
     }
   }
 }
@@ -297,7 +347,6 @@ mod tests {
         acc + elem
       });
 
-      // Sort of useless, isn't it?
       assert!(count <= key.params.n - 20);
       assert!(count >= 20);
     }
@@ -346,6 +395,81 @@ mod tests {
         }
         assert!(test_set.len() as f64 >= 0.9 * NB_SAMPLES as f64);
       }
+    }
+  }
+
+  fn fill_random(sample: &LweSample, params: &LweParams) -> LweSample {
+    use rand::distributions::Distribution;
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let mut rng = rand::thread_rng();
+    let coefficients = (0..sample.coefficients.len())
+      .map(|_| d.sample(&mut rng))
+      .collect();
+    let b = d.sample(&mut rng);
+    let current_variance = 0.2;
+
+    LweSample {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+
+  /// TODO: Remove this test. It tests the implementation by implementing it again. Keeping until library is stable as a sort of regression test.
+  #[test]
+  fn test_adding_samples() {
+    for key in generate_keys() {
+      let sample1 = fill_random(&LweSample::new(&key.params), &key.params);
+      let sample2 = fill_random(&LweSample::new(&key.params), &key.params);
+      let a = sample1.clone();
+      let b = sample2.clone();
+      let result = a + b;
+
+      let coefficients = sample1
+        .coefficients
+        .iter()
+        .zip(sample2.coefficients)
+        .map(|(a, b)| a.wrapping_add(b))
+        .collect();
+      let b = sample1.b.wrapping_add(sample2.b);
+      let current_variance = sample1.current_variance + sample2.current_variance;
+      assert_eq!(
+        result,
+        LweSample {
+          coefficients,
+          b,
+          current_variance
+        }
+      );
+    }
+  }
+
+  /// TODO: Remove this test. It tests the implementation by implementing it again. Keeping until library is stable as a sort of regression test.
+  #[test]
+  fn test_subtracting_samples() {
+    for key in generate_keys() {
+      let sample1 = fill_random(&LweSample::new(&key.params), &key.params);
+      let sample2 = fill_random(&LweSample::new(&key.params), &key.params);
+      let a = sample1.clone();
+      let b = sample2.clone();
+      let result = a - b;
+
+      let coefficients = sample1
+        .coefficients
+        .iter()
+        .zip(sample2.coefficients)
+        .map(|(a, b)| a.wrapping_sub(b))
+        .collect();
+      let b = sample1.b.wrapping_sub(sample2.b);
+      let current_variance = sample1.current_variance + sample2.current_variance;
+      assert_eq!(
+        result,
+        LweSample {
+          coefficients,
+          b,
+          current_variance
+        }
+      );
     }
   }
 }
