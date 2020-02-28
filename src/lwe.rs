@@ -74,6 +74,23 @@ impl std::ops::Sub<LweSample> for LweSample {
   }
 }
 
+impl std::ops::Mul<i32> for LweSample {
+  type Output = Self;
+  fn mul(self, p: i32) -> Self {
+    let LweSample {
+      coefficients,
+      b,
+      current_variance,
+    } = self;
+
+    Self {
+      coefficients: coefficients.iter().map(|c| c * p).collect(),
+      b: b * p,
+      current_variance: (p * p) as f64 * current_variance,
+    }
+  }
+}
+
 #[derive(Clone)]
 pub struct TFHEGateBootstrappingParameterSet {
   pub ks_t: i32,
