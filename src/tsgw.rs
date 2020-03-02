@@ -95,12 +95,12 @@ impl TGswKey {
   }
 }
 
+#[derive(Clone, Debug)]
 pub struct TGswSample {
-  /// (k+1)l TLwe Sample
-  all_sample: Vec<TLweSample>,
-  /// optional access to the different size blocks l
-  bloc_sample: Vec<Vec<TLweSample>>,
-  current_variance: f64,
+  /// (k+1)l TLwe Sample (THIS IS A MATRIX)
+  all_sample: Vec<Vec<TLweSample>>,
+  /// Horizontal blocks (l lines) of TGSW matrix
+  // bloc_sample: Vec<TLweSample>,
   k: i32,
   l: i32,
 }
@@ -108,21 +108,18 @@ pub struct TGswSample {
 impl TGswSample {
   pub(crate) fn new(params: &TGswParams) -> Self {
     let k = params.tlwe_params.k;
-    let l = params.l;
-    let all_sample = vec![TLweSample::new(&params.tlwe_params); ((k + 1) * params.l) as usize];
-    let mut bloc_sample = vec![TLweSample::new(&params.tlwe_params); (k + 1) as usize];
-    for p in 0..(k + 1) {
-      // TODO:                           Figure out whether ↓clone is correct or if code needs to point to value somewhere else and mutate it at some point
-      bloc_sample[p as usize] = all_sample[(p * l) as usize].clone();
-    }
-    unimplemented!()
+    let l = params.l; // Lines / rows
+                      // TODO: find out if this is correctamente
+    let all_sample = vec![vec![TLweSample::new(&params.tlwe_params); (k + 1) as usize]; l as usize];
+
+    Self { all_sample, k, l }
   }
 
   pub(crate) fn encrypt_zero(&mut self, alpha: f64, key: &TGswKey) {
     let rl_key = &key.tlwe_key;
     let kpl = key.params.kpl;
     for p in 0..kpl {
-      self.all_sample[p as usize].encrypt_zero(alpha, rl_key);
+      // self.all_sample[p as usize].encrypt_zero(alpha, rl_key);
     }
     unimplemented!()
   }
@@ -133,10 +130,22 @@ impl TGswSample {
     let h = &params.h;
 
     // Compute self += H
-    for bloc in 0..=k {
-      for i in 0..l {
-        self.bloc_sample[bloc as usize][i as usize].a[bloc as usize].coefs[0] +=
-          message * h[i as usize];
+    for i in 0..l as usize {
+      for j in 0..=k as usize {
+        self.all_sample[i][j].a[j].coefs[0] += message * h[i];
+      }
+    }
+  }
+
+  pub(crate) fn add_h(&mut self, params: &TGswParams) {
+    let k = params.tlwe_params.k;
+    let l = params.l;
+    let h = &params.h;
+
+    // compute self += H
+    for i in 0..l as usize {
+      for j in 0..=k as usize {
+        self.all_sample[i][j].a[j].coefs[0] += h[i];
       }
     }
   }
@@ -172,6 +181,7 @@ pub struct TGswSampleFFT {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::tlwe::TorusPolynomial;
 
   fn generate_parameters() -> Vec<TGswParams> {
     vec![
@@ -208,17 +218,58 @@ mod tests {
     }
   }
 
+  fn fully_random_tgsw(sample: &mut TGswSample, alpha: f64, params: &TGswParams) {
+    let l = params.l;
+    let k = params.tlwe_params.k;
+
+    // This is butt-ugly
+    for j in 0..l as usize {
+      for i in 0..=k as usize {
+        let mut row = &mut sample.all_sample[j][i];
+        for u in 0..=k {
+          row.a[u as usize] = TorusPolynomial::torus_polynomial_uniform(row.a.len() as i32);
+        }
+        row.current_variance = alpha * alpha;
+      }
+    }
+  }
+
   #[test]
-  fn test_encrypt() {
-    for key in &mut generate_keys() {
-      let n = key.params.tlwe_params.n;
-      let mut s = TGswSample::new(&key.params);
+  fn test_add_h() {
+    for params in generate_parameters() {
+      let mut sample = TGswSample::new(&params);
+      let kpl = params.kpl;
+      let l = params.l;
+      let k = params.tlwe_params.k;
+      let n = params.tlwe_params.n;
+      let h = &params.h;
+      let alpha = 4.2;
 
-      let mess: i32 = (rand::random::<i32>() % 1000) - 500;
-      // set random pseudo value
-      let alpha: f64 = 3.14;
+      fully_random_tgsw(&mut sample, alpha, &params);
 
-      key.encrypt(&mut s, mess, alpha);
+      let sample_copy = sample.clone();
+      sample.add_h(&params);
+
+      // Verify all coefficients
+      for i in 0..l as usize {
+        for j in 0..=k as usize {
+          assert_eq!(
+            sample.all_sample[i][j].current_variance,
+            sample_copy.all_sample[i][j].current_variance
+          );
+
+          for u in 0..=k as usize {
+            //verify that pol[bloc][i][u]=initial[bloc][i][u]+(bloc==u?hi:0)
+            let new_polynomial = &sample.all_sample[i][j].a[u];
+            let old_polynomial = &sample_copy.all_sample[i][j].a[u];
+            assert_eq!(
+              new_polynomial.coefs[0], // Should this be i == u?
+              old_polynomial.coefs[0] + (if j == u { h[i] } else { 0 })
+            );
+            assert_eq!(new_polynomial.coefs[1..], old_polynomial.coefs[1..]);
+          }
+        }
+      }
     }
   }
 }

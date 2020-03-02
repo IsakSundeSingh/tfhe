@@ -128,7 +128,7 @@ pub struct TLweSample {
   /// alias of a[k] to get the right term
   b: TorusPolynomial,
   /// avg variance of the sample
-  current_variance: f64,
+  pub(crate) current_variance: f64,
   k: i32,
 }
 impl TLweSample {
@@ -140,9 +140,10 @@ impl TLweSample {
     //or we can also do it in a single for loop
     //  &sample->a[0],...,&sample->a[k]
     let a = vec![TorusPolynomial::new(params.n); (params.k + 1) as usize];
+    let b = a[params.k as usize].clone();
     Self {
       a,
-      b: a[params.k as usize],
+      b,
       current_variance: 0f64,
       k: params.k,
     }
