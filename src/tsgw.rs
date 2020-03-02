@@ -119,10 +119,9 @@ impl TGswSample {
   pub(crate) fn encrypt_zero(&mut self, alpha: f64, key: &TGswKey) {
     let rl_key = &key.tlwe_key;
     let kpl = key.params.kpl;
-    for p in 0..kpl {
-      // self.all_sample[p as usize].encrypt_zero(alpha, rl_key);
+    for p in 0..kpl as usize {
+      self.all_sample[0][p].encrypt_zero(alpha, rl_key);
     }
-    unimplemented!()
   }
 
   pub(crate) fn add_mu_int_h(&mut self, message: i32, params: &TGswParams) {
