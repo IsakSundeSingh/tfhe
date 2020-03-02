@@ -95,7 +95,7 @@ impl TGswKey {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TGswSample {
   /// (k+1)l TLwe Sample (THIS IS A MATRIX)
   all_sample: Vec<Vec<TLweSample>>,
@@ -108,8 +108,9 @@ pub struct TGswSample {
 impl TGswSample {
   pub(crate) fn new(params: &TGswParams) -> Self {
     let k = params.tlwe_params.k;
-    let l = params.l; // Lines / rows
-                      // TODO: find out if this is correctamente
+    // Lines / rows
+    let l = params.l;
+    // TODO: find out if this is correctamente
     let all_sample = vec![vec![TLweSample::new(&params.tlwe_params); (k + 1) as usize]; l as usize];
 
     Self { all_sample, k, l }
@@ -146,6 +147,30 @@ impl TGswSample {
     for i in 0..l as usize {
       for j in 0..=k as usize {
         self.all_sample[i][j].a[j].coefs[0] += h[i];
+      }
+    }
+  }
+
+  pub(crate) fn add_mu_h(&mut self, message: &IntPolynomial, params: &TGswParams) {
+    let k = params.tlwe_params.k;
+    let n = params.tlwe_params.n;
+    let l = params.l;
+    let h = &params.h;
+    let mu = &message.coefs;
+
+    // Compute self += H
+    for i in 0..l as usize {
+      for j in 0..=k as usize {
+        let target = &mut self.all_sample[i][j].a[j].coefs;
+        for jj in 0..n as usize {
+          println!(
+            "Target len: {}, mu len: {}, h len: {}",
+            target.len(),
+            mu.len(),
+            h.len()
+          );
+          target[jj] += mu[jj] * h[i];
+        }
       }
     }
   }
@@ -262,6 +287,72 @@ mod tests {
             //verify that pol[bloc][i][u]=initial[bloc][i][u]+(bloc==u?hi:0)
             let new_polynomial = &sample.all_sample[i][j].a[u];
             let old_polynomial = &sample_copy.all_sample[i][j].a[u];
+            assert_eq!(
+              new_polynomial.coefs[0], // Should this be i == u?
+              old_polynomial.coefs[0] + (if j == u { h[i] } else { 0 })
+            );
+            assert_eq!(new_polynomial.coefs[1..], old_polynomial.coefs[1..]);
+          }
+        }
+      }
+    }
+  }
+
+  fn random_int_polynomial(n: i32) -> IntPolynomial {
+    let mut rng = rand::thread_rng();
+    use rand::distributions::Distribution;
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+
+    let coefs: Vec<i32> = (0..n).map(|_| d.sample(&mut rng) % 10 - 5).collect();
+    assert_eq!(coefs.len() as i32, n);
+    IntPolynomial { coefs, n }
+  }
+
+  #[test]
+  #[ignore]
+  fn test_add_mu_h() {
+    for params in generate_parameters() {
+      let mut sample = TGswSample::new(&params);
+      let kpl = params.kpl;
+      let l = params.l;
+      let k = params.tlwe_params.k;
+      let n = params.tlwe_params.n;
+      let h = &params.h;
+      let alpha = 4.2;
+      let message = random_int_polynomial(n);
+
+      fully_random_tgsw(&mut sample, alpha, &params);
+
+      let sample_copy = sample.clone();
+      sample.add_mu_h(&message, &params);
+
+      // Verify all coefficients
+      for i in 0..l as usize {
+        for j in 0..=k as usize {
+          assert_eq!(
+            sample.all_sample[i][j].current_variance,
+            sample_copy.all_sample[i][j].current_variance
+          );
+
+          for u in 0..=k as usize {
+            //verify that pol[bloc][i][u]=initial[bloc][i][u]+(bloc==u?hi*mess:0)
+            let new_polynomial = &sample.all_sample[i][j].a[u];
+            let old_polynomial = &sample_copy.all_sample[i][j].a[u];
+
+            if j == u {
+              for jj in 0..n as usize {
+                assert_eq!(
+                  new_polynomial.coefs[jj],
+                  old_polynomial.coefs[jj] + h[i] * message.coefs[jj]
+                );
+              }
+            } else {
+              assert!(new_polynomial
+                .coefs
+                .iter()
+                .zip(old_polynomial.coefs.iter())
+                .all(|(a, b)| a == b));
+            }
             assert_eq!(
               new_polynomial.coefs[0], // Should this be i == u?
               old_polynomial.coefs[0] + (if j == u { h[i] } else { 0 })

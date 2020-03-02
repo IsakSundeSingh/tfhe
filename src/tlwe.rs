@@ -50,7 +50,7 @@ pub struct IntPolynomial {
 }
 
 impl IntPolynomial {
-  fn new(n: i32) -> Self {
+  pub(crate) fn new(n: i32) -> Self {
     Self {
       n,
       coefs: vec![0; n as usize],
@@ -120,7 +120,7 @@ impl TorusPolynomial {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TLweSample {
   /// array of length k+1: mask + right term
   pub(crate) a: Vec<TorusPolynomial>,
