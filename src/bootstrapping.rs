@@ -124,14 +124,12 @@ pub fn boots_or(
     current_variance: 0f64,
   };
 
-  let res = temp_result + ca.clone() + cb.clone();
+  temp_result + ca.clone() + cb.clone()
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
-
-  res
 }
 
 /** bootstrapped And Gate: result = a and b */
@@ -151,15 +149,15 @@ pub fn boots_and(
     b: and,
     current_variance: 0f64,
   };
-  let res = temp_result + ca.clone() + cb.clone();
+
+  temp_result + ca.clone() + cb.clone()
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
-  res
-  // unimplemented!()
 }
+
 /** bootstrapped Xor Gate: result = a xor b */
 pub fn boots_xor(
   ca: &LweSample,
