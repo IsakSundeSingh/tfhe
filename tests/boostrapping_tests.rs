@@ -53,13 +53,6 @@ macro_rules! test_binary_gate {
 
         let encrypted = $encrypted_gate(enc_a, enc_b, &cloud_key);
         let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
-        println!(
-          "Running encrypted binary gate {} {} {} = {}",
-          a,
-          stringify!(and),
-          b,
-          decrypted
-        );
         assert_eq!(decrypted, $binary_gate(a, b));
       }
     }
