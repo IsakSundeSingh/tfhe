@@ -1,23 +1,8 @@
+use crate::lwe::LweParams;
 use crate::numerics::gaussian32;
 use rand::distributions::Distribution;
-#[derive(Clone)]
-pub struct LWEParams {
-  n: i32,
-  alpha_min: f64,
-  alpha_max: f64,
-}
 
-impl LWEParams {
-  pub fn new(n: i32, alpha_min: f64, alpha_max: f64) -> Self {
-    Self {
-      n,
-      alpha_min,
-      alpha_max,
-    }
-  }
-}
-
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TLweParameters {
   /// a power of 2: degree of the polynomials
   pub n: i32,
@@ -28,7 +13,7 @@ pub struct TLweParameters {
   /// maximal noise s.t. we can decrypt
   pub alpha_max: f64,
   /// lwe params if one extracts
-  pub extracted_lweparams: LWEParams,
+  pub extracted_lweparams: LweParams,
 }
 
 impl TLweParameters {
@@ -38,7 +23,7 @@ impl TLweParameters {
       k,
       alpha_min,
       alpha_max,
-      extracted_lweparams: LWEParams::new(n * k, alpha_min, alpha_max),
+      extracted_lweparams: LweParams::new(n * k, alpha_min, alpha_max),
     }
   }
 }
@@ -60,7 +45,7 @@ impl IntPolynomial {
 
 pub struct TLweKey {
   /// Parameters of the key
-  params: TLweParameters,
+  pub(crate) params: TLweParameters,
   /// the key (i.e k binary polynomials)
   pub(crate) key: Vec<IntPolynomial>,
 }
@@ -126,10 +111,10 @@ pub struct TLweSample {
   pub(crate) a: Vec<TorusPolynomial>,
   /// FIXME: This is some C++ shit. b is actually referring to a single value within a
   /// alias of a[k] to get the right term
-  b: TorusPolynomial,
+  pub(crate) b: TorusPolynomial,
   /// avg variance of the sample
   pub(crate) current_variance: f64,
-  k: i32,
+  pub(crate) k: i32,
 }
 impl TLweSample {
   pub(crate) fn new(params: &TLweParameters) -> Self {
@@ -172,8 +157,6 @@ impl TLweSample {
     }
 
     self.current_variance = alpha * alpha;
-
-    unimplemented!()
   }
 }
 

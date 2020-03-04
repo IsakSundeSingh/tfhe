@@ -1,9 +1,10 @@
+use crate::lwe::LweKey;
 use crate::lwe::{
-  LweParams, LweSample, TFHEGateBootstrappingCloudKeySet, TFHEGateBootstrappingParameterSet,
-  TFheGateBootstrappingSecretKeySet,
+  LweBootstrappingKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
+  TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
 };
+use crate::tgsw::{TGswKey, TGswParams};
 use crate::tlwe::TLweParameters;
-use crate::tsgw::TGswParams;
 
 //////////////////////////////////////////
 // Gate bootstrapping public interface
@@ -40,16 +41,12 @@ pub fn new_default_gate_bootstrapping_parameters(
 pub fn new_random_gate_bootstrapping_secret_keyset(
   params: &TFHEGateBootstrappingParameterSet,
 ) -> TFheGateBootstrappingSecretKeySet {
-  //let lwe_key: LweKey = LweKey::new(params.in_out_params.clone());
-  // lweKeyGen(lwe_key);
-  // TGswKey *tgsw_key = new_TGswKey(params->tgsw_params);
-  // tGswKeyGen(tgsw_key);
-  // LweBootstrappingKey *bk = new_LweBootstrappingKey(params->ks_t, params->ks_basebit, params->in_out_params,
-  //                                                   params->tgsw_params);
-  // tfhe_createLweBootstrappingKey(bk, lwe_key, tgsw_key);
+  let lwe_key: LweKey = LweKey::generate(&params.in_out_params);
+  let tgsw_key = TGswKey::generate(&params.tgsw_params);
+  let bk = LweBootstrappingKey::create(&params, &lwe_key, &tgsw_key);
+  TFheGateBootstrappingSecretKeySet::new(params.clone(), bk, lwe_key, tgsw_key)
   // LweBootstrappingKeyFFT *bkFFT = new_LweBootstrappingKeyFFT(bk);
   // return new TFheGateBootstrappingSecretKeySet(params, bk, bkFFT, lwe_key, tgsw_key);
-  unimplemented!()
 }
 
 //  deletes gate bootstrapping parameters
@@ -63,15 +60,15 @@ pub fn new_random_gate_bootstrapping_secret_keyset(
 
 /** generate a new unititialized ciphertext */
 pub fn new_gate_bootstrapping_ciphertext(params: &TFHEGateBootstrappingParameterSet) -> LweSample {
-  unimplemented!()
+  LweSample::new(&params.in_out_params)
 }
 
 /** generate a new unititialized ciphertext array of length nbelems */
 pub fn new_gate_bootstrapping_ciphertext_array(
   nbelems: i32,
   params: &TFHEGateBootstrappingParameterSet,
-) -> LweSample {
-  unimplemented!()
+) -> Vec<LweSample> {
+  vec![new_gate_bootstrapping_ciphertext(&params); nbelems as usize]
 }
 
 //  deletes a ciphertext
@@ -81,13 +78,19 @@ pub fn new_gate_bootstrapping_ciphertext_array(
 // pub fn void delete_gate_bootstrapping_ciphertext_array(int32_t nbelems, LweSample *samples);
 
 /** encrypts a boolean */
-pub fn boots_sym_encrypt(message: bool, params: &TFheGateBootstrappingSecretKeySet) -> LweSample {
-  unimplemented!()
+pub fn boots_sym_encrypt(message: bool, key: &TFheGateBootstrappingSecretKeySet) -> LweSample {
+  let _1s8 = crate::numerics::mod_switch_to_torus32(1, 8);
+  let mu = if message { _1s8 } else { -_1s8 };
+  let alpha = key.params.in_out_params.alpha_min;
+  let mut sample = LweSample::new(&key.params.in_out_params);
+  key.lwe_key.encrypt(&mut sample, mu, alpha);
+  sample
 }
 
 /** decrypts a boolean */
-pub fn boots_sym_decrypt(sample: &LweSample, params: &TFheGateBootstrappingSecretKeySet) -> bool {
-  unimplemented!()
+pub fn boots_sym_decrypt(sample: &LweSample, key: &TFheGateBootstrappingSecretKeySet) -> bool {
+  use crate::lwe::lwe_phase;
+  lwe_phase(sample, &key.lwe_key) > 0
 }
 
 /** bootstrapped Constant (true or false) trivial Gate */

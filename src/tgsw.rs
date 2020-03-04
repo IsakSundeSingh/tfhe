@@ -1,6 +1,8 @@
-use crate::tlwe::{IntPolynomial, TLweKey, TLweParameters, TLweSample, TLweSampleFFT, Torus32};
+use crate::tlwe::{
+  IntPolynomial, TLweKey, TLweParameters, TLweSample, TLweSampleFFT, Torus32, TorusPolynomial,
+};
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TGswParams {
   /// decomp length
   l: i32,
@@ -18,7 +20,7 @@ pub struct TGswParams {
   mask_mod: u32,
 
   /// Params of each row
-  tlwe_params: TLweParameters,
+  pub(crate) tlwe_params: TLweParameters,
 
   /// number of rows = (k+1)*l
   kpl: i32,
@@ -64,7 +66,7 @@ impl TGswParams {
 
 pub struct TGswKey {
   /// the parameters
-  params: TGswParams,
+  pub(crate) params: TGswParams,
 
   /// the tlwe params of each rows
   tlwe_params: TLweParameters,
@@ -72,7 +74,7 @@ pub struct TGswKey {
   /// the key (array of k polynomials)
   key: Vec<IntPolynomial>,
 
-  tlwe_key: TLweKey,
+  pub(crate) tlwe_key: TLweKey,
 }
 
 impl TGswKey {
@@ -89,7 +91,13 @@ impl TGswKey {
     }
   }
 
-  pub(crate) fn encrypt(&mut self, result: &mut TGswSample, message: i32, alpha: f64) {
+  pub(crate) fn generate(params: &TGswParams) -> Self {
+    let mut key = Self::new(params);
+    key.tlwe_key.generate();
+    key
+  }
+
+  pub(crate) fn encrypt(&self, result: &mut TGswSample, message: i32, alpha: f64) {
     result.encrypt_zero(alpha, &self);
     result.add_mu_int_h(message, &self.params);
   }
@@ -119,9 +127,13 @@ impl TGswSample {
   pub(crate) fn encrypt_zero(&mut self, alpha: f64, key: &TGswKey) {
     let rl_key = &key.tlwe_key;
     let kpl = key.params.kpl;
-    for p in 0..kpl as usize {
-      self.all_sample[0][p].encrypt_zero(alpha, rl_key);
-    }
+
+    self.all_sample[0]
+      .iter_mut()
+      .for_each(|s| s.encrypt_zero(alpha, rl_key));
+    // for p in 0..kpl as usize {
+    //   self.all_sample[0][p].encrypt_zero(alpha, rl_key);
+    // }
   }
 
   pub(crate) fn add_mu_int_h(&mut self, message: i32, params: &TGswParams) {
@@ -129,12 +141,56 @@ impl TGswSample {
     let l = params.l;
     let h = &params.h;
 
-    // Compute self += H
-    for i in 0..l as usize {
-      for j in 0..=k as usize {
-        self.all_sample[i][j].a[j].coefs[0] += message * h[i];
-      }
-    }
+    // TFHE comment: Compute self += H
+    // My comment:   Compute self += H * message (ish)
+    let hs: Vec<i32> = h.iter().map(|x| message * x).collect();
+    self.all_sample = self
+      .all_sample
+      .iter()
+      .enumerate()
+      .map(|(i, is): (usize, &Vec<TLweSample>)| {
+        is.iter()
+          .map(|js: &TLweSample| {
+            let new_a: Vec<TorusPolynomial> = js
+              .a
+              .iter()
+              .map(|a: &TorusPolynomial| {
+                let new_coefs = a
+                  .coefs
+                  .iter()
+                  .enumerate()
+                  .map(
+                    |(coef_idx, coef): (usize, &i32)| {
+                      if coef_idx == 0 {
+                        coef + h[i]
+                      } else {
+                        *coef
+                      }
+                    },
+                  )
+                  .collect::<Vec<Torus32>>();
+                TorusPolynomial {
+                  n: new_coefs.len() as i32,
+                  coefs: new_coefs,
+                }
+              })
+              .collect();
+            TLweSample {
+              a: new_a.clone(),
+              ..js.clone()
+            }
+          })
+          .collect()
+      })
+      .collect();
+
+    // Is equivalent to:
+
+    // for i in 0..l as usize {
+    //   for j in 0..=k as usize {
+    //     self.all_sample[i][j].a[j].coefs[0] += message * h[i];
+    //   }
+    // }
   }
 
   pub(crate) fn add_h(&mut self, params: &TGswParams) {
@@ -161,15 +217,24 @@ impl TGswSample {
     for i in 0..l as usize {
       for j in 0..=k as usize {
         let target = &mut self.all_sample[i][j].a[j].coefs;
-        for jj in 0..n as usize {
-          println!(
-            "Target len: {}, mu len: {}, h len: {}",
-            target.len(),
-            mu.len(),
-            h.len()
-          );
-          target[jj] += mu[jj] * h[i];
-        }
+        println!("target coefs befor: {:?}", target);
+        target
+          .iter_mut()
+          .zip(mu.iter())
+          .for_each(|(t, mu)| *t += mu * h[i]);
+        println!("target coefs after: {:?}", target);
+
+        // for jj in 0..n as usize {
+        //   println!(
+        //     "Target len: {}, mu len: {}, h len: {}, jj: {}, n: {}",
+        //     target.len(),
+        //     mu.len(),
+        //     h.len(),
+        //     jj,
+        //     n
+        //   );
+        //   target[jj] += mu[jj] * h[i];
+        // }
       }
     }
   }
@@ -339,12 +404,18 @@ mod tests {
             let old_polynomial = &sample_copy.all_sample[i][j].a[u];
 
             if j == u {
-              for jj in 0..n as usize {
-                assert_eq!(
-                  new_polynomial.coefs[jj],
-                  old_polynomial.coefs[jj] + h[i] * message.coefs[jj]
-                );
-              }
+              new_polynomial
+                .coefs
+                .iter()
+                .zip(old_polynomial.coefs.iter())
+                .zip(message.coefs.iter())
+                .for_each(|((n, o), m)| assert_eq!(*n, *o + h[i] * (dbg!(*m))));
+            // for jj in 0..n as usize {
+            //   assert_eq!(
+            //     new_polynomial.coefs[jj],
+            //     old_polynomial.coefs[jj] + h[i] * message.coefs[jj]
+            //   );
+            // }
             } else {
               assert!(new_polynomial
                 .coefs
@@ -354,7 +425,7 @@ mod tests {
             }
             assert_eq!(
               new_polynomial.coefs[0], // Should this be i == u?
-              old_polynomial.coefs[0] + (if j == u { h[i] } else { 0 })
+              old_polynomial.coefs[0] + (if j == u { dbg!(h[i]) } else { 0 })
             );
             assert_eq!(new_polynomial.coefs[1..], old_polynomial.coefs[1..]);
           }

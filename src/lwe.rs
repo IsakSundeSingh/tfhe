@@ -1,5 +1,6 @@
+use crate::tgsw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
+use crate::tlwe::TLweKey;
 use crate::tlwe::{TLweParameters, Torus32};
-use crate::tsgw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
 
 use crate::numerics::{approximate_phase, gaussian32};
 
@@ -118,22 +119,22 @@ impl TFHEGateBootstrappingParameterSet {
 pub struct TFHEGateBootstrappingCloudKeySet {
   params: TFHEGateBootstrappingParameterSet,
   bk: LweBootstrappingKey,
-  bk_fft: LweBootstrappingKeyFFT,
+  // bk_fft: LweBootstrappingKeyFFT,
 }
 
 impl TFHEGateBootstrappingCloudKeySet {
   pub fn new(
     params: TFHEGateBootstrappingParameterSet,
     bk: LweBootstrappingKey,
-    bk_fft: LweBootstrappingKeyFFT,
+    // bk_fft: LweBootstrappingKeyFFT,
   ) -> Self {
-    Self { params, bk, bk_fft }
+    Self { params, bk }
   }
 }
 
 pub struct TFheGateBootstrappingSecretKeySet {
-  params: TFHEGateBootstrappingParameterSet,
-  lwe_key: LweKey,
+  pub(crate) params: TFHEGateBootstrappingParameterSet,
+  pub(crate) lwe_key: LweKey,
   tgsw_key: TGswKey,
   cloud: TFHEGateBootstrappingCloudKeySet,
 }
@@ -141,11 +142,10 @@ impl TFheGateBootstrappingSecretKeySet {
   pub fn new(
     params: TFHEGateBootstrappingParameterSet,
     bk: LweBootstrappingKey,
-    bk_fft: LweBootstrappingKeyFFT,
     lwe_key: LweKey,
     tgsw_key: TGswKey,
   ) -> Self {
-    let cloud = TFHEGateBootstrappingCloudKeySet::new(params.clone(), bk, bk_fft);
+    let cloud = TFHEGateBootstrappingCloudKeySet::new(params.clone(), bk);
     Self {
       params,
       lwe_key,
@@ -209,7 +209,7 @@ impl LweKey {
    * This function encrypts a message by using key and a given noise value
    */
 
-  pub fn encrypt_with_external_noise(
+  pub(crate) fn encrypt_with_external_noise(
     &self,
     result: &mut LweSample,
     message: Torus32,
@@ -225,7 +225,11 @@ impl LweKey {
     let mut rng = rand::thread_rng();
     for i in 0..n {
       result.coefficients[i as usize] = d.sample(&mut rng);
-      result.b += result.coefficients[i as usize] * self.key[i as usize];
+
+      // Overflowed here, using wrapping add to imitate C++ behavior
+      result.b = result
+        .b
+        .wrapping_add(result.coefficients[i as usize] * self.key[i as usize]);
     }
     result.current_variance = alpha * alpha;
   }
@@ -234,9 +238,28 @@ impl LweKey {
    * This function computes the decryption of sample by using key
    * The constant Msize indicates the message space and is used to approximate the phase
    */
-  pub fn decrypt(&self, sample: &LweSample, message_size: i32) -> Torus32 {
+  pub(crate) fn decrypt(&self, sample: &LweSample, message_size: i32) -> Torus32 {
     let phi = lwe_phase(sample, self);
     approximate_phase(phi, message_size)
+  }
+
+  pub(crate) fn extract(params: &LweParams, key: &TLweKey) -> Self {
+    let mut extracted_key = Self {
+      params: params.clone(),
+      key: vec![0; params.n as usize],
+    };
+
+    let n = key.params.n as usize;
+    let k = key.params.k;
+
+    assert_eq!(extracted_key.params.n, k * n as i32);
+
+    for i in 0..k as usize {
+      for j in 0..n as usize {
+        extracted_key.key[i * n + j] = key.key[i].coefs[j];
+      }
+    }
+    extracted_key
   }
 }
 
@@ -266,7 +289,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
 pub struct LweParams {
   n: i32,
   /// le plus petit bruit tq sur
-  alpha_min: f64,
+  pub(crate) alpha_min: f64,
   /// le plus gd bruit qui permet le déchiffrement
   alpha_max: f64,
 }
@@ -291,9 +314,61 @@ pub struct LweBootstrappingKey {
   /// params after extraction: key: s'
   extract_params: LweParams,
   /// the bootstrapping key (s->s")
-  bk: TGswSample,
+  bk: Vec<TGswSample>,
   /// the keyswitch key (s'->s)
   ks: LweKeySwitchKey,
+}
+
+impl LweBootstrappingKey {
+  fn new(params: &TFHEGateBootstrappingParameterSet) -> Self {
+    let TFHEGateBootstrappingParameterSet {
+      ks_t,
+      ks_base_bit,
+      in_out_params,
+      tgsw_params,
+    } = params;
+    let accum_params = &tgsw_params.tlwe_params;
+    let extract_params = &accum_params.extracted_lweparams;
+    let n = in_out_params.n;
+    let big_n = extract_params.n;
+
+    let bk: Vec<TGswSample> = vec![TGswSample::new(&tgsw_params); n as usize];
+    let ks = LweKeySwitchKey::new(n, *ks_t, *ks_base_bit, in_out_params);
+    let bk_params = params.tgsw_params.clone();
+
+    Self {
+      in_out_params: in_out_params.clone(),
+      bk_params,
+      accum_params: accum_params.clone(),
+      extract_params: extract_params.clone(),
+      bk,
+      ks,
+    }
+  }
+
+  pub(crate) fn create(
+    params: &TFHEGateBootstrappingParameterSet,
+    key_in: &LweKey,
+    rgsw_key: &TGswKey,
+  ) -> Self {
+    let mut key = Self::new(&params);
+    assert_eq!(key.bk_params, rgsw_key.params);
+    assert_eq!(key.in_out_params, key_in.params);
+
+    let in_out_params = &key.in_out_params;
+    let accum_params = &key.bk_params.tlwe_params;
+    let extract_params = &accum_params.extracted_lweparams;
+
+    let accum_key = &rgsw_key.tlwe_key;
+    let extracted_key = LweKey::extract(&extract_params, &accum_key);
+    key.ks.create(&extracted_key, &key_in);
+
+    let alpha = accum_params.alpha_min;
+    for i in 0..in_out_params.n as usize {
+      rgsw_key.encrypt(&mut key.bk[i], key_in.key[i], alpha);
+    }
+    key
+  }
 }
 
 pub struct LweBootstrappingKeyFFT {
@@ -322,13 +397,60 @@ pub struct LweKeySwitchKey {
   base: i32,
   /// params of the output key s
   out_params: LweParams,
-  /// array which contains all Lwe samples of size nlbase
-  ks0_raw: Vec<LweSample>,
-  /// of size nl points to an array ks0_raw whose boxes are spaces basic positions
-  ks1_raw: Vec<LweSample>,
-  /// the keyswitch elements: a n.l.base matrix
-  ks: Vec<Vec<LweSample>>,
+  /// array which contains all Lwe samples of size n*l*base
+  // ks0_raw: Vec<LweSample>,
+  // of size n*l points to an array ks0_raw whose boxes are spaces basic positions
+  // ks1_raw: Vec<Vec<LweSample>>,
+  // the keyswitch elements: a n.l.base matrix
+  ks: Vec<Vec<Vec<LweSample>>>,
   // of size n points to ks1 an array whose boxes are spaced by ell positions
+}
+
+impl LweKeySwitchKey {
+  pub(crate) fn new(n: i32, t: i32, base_bit: i32, out_params: &LweParams) -> Self {
+    let base = 1 << base_bit;
+    let ks = vec![vec![vec![LweSample::new(&out_params); base as usize]; t as usize]; n as usize];
+    Self {
+      n,
+      t,
+      base_bit,
+      base,
+      out_params: out_params.clone(),
+      ks,
+    }
+  }
+
+  pub(crate) fn create(&mut self, in_key: &LweKey, out_key: &LweKey) {
+    use rand::distributions::Distribution;
+    let alpha = out_key.params.alpha_min;
+    let size_ks = self.n * self.t * (self.base - 1);
+
+    // Choose a random vector of gaussian noises
+    let mut rng = rand::thread_rng();
+    let d = rand_distr::Normal::new(0f64, alpha).expect("Could not create normal distributioon");
+    let noise: Vec<f64> = (0..size_ks).map(|_| d.sample(&mut rng)).collect();
+    let error: f64 = noise.iter().sum::<f64>() / size_ks as f64;
+    // Recenter the noises
+    let noise: Vec<f64> = noise.iter().map(|n| n - error).collect();
+
+    // Generate the ks
+    let mut index = 0;
+    for i in 0..self.n as usize {
+      for j in 0..self.t as usize {
+        // term h=0 as trivial encryption of 0 (it will not be used in the KeySwitching)
+        self.ks[i][j][0].b = 0;
+        // lweNoiselessTrivial(&result->ks[i][j][0], 0, out_key->params);
+        for h in 1..self.base as usize {
+          //    Torus32 mess = (in_key->key[i] * h)*(1<<(32-(j+1)*basebit));
+          let message: Torus32 =
+            (in_key.key[i] * h as i32) * (1 << (32 - (j + 1) * self.base_bit as usize));
+          out_key.encrypt_with_external_noise(&mut self.ks[i][j][h], message, noise[index], alpha);
+          //    lweSymEncryptWithExternalNoise(&result->ks[i][j][h], mess, noise[index], alpha, out_key);
+          index += 1;
+        }
+      }
+    }
+  }
 }
 
 #[cfg(test)]
