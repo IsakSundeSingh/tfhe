@@ -176,7 +176,7 @@ impl TGswSample {
               })
               .collect();
             TLweSample {
-              a: new_a.clone(),
+              a: new_a,
               ..js.clone()
             }
           })
@@ -193,6 +193,7 @@ impl TGswSample {
     // }
   }
 
+  #[allow(clippy::needless_range_loop)]
   pub(crate) fn add_h(&mut self, params: &TGswParams) {
     let k = params.tlwe_params.k;
     let l = params.l;
@@ -206,6 +207,7 @@ impl TGswSample {
     }
   }
 
+  #[allow(clippy::needless_range_loop)]
   pub(crate) fn add_mu_h(&mut self, message: &IntPolynomial, params: &TGswParams) {
     let k = params.tlwe_params.k;
     let n = params.tlwe_params.n;
