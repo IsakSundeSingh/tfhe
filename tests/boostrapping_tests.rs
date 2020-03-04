@@ -1,7 +1,7 @@
+use tfhe::bootstrapping::boots_nand;
 use tfhe::bootstrapping::{
   boots_and, boots_or, boots_sym_decrypt, boots_sym_encrypt,
-  new_default_gate_bootstrapping_parameters, new_gate_bootstrapping_ciphertext,
-  new_random_gate_bootstrapping_secret_keyset,
+  new_default_gate_bootstrapping_parameters, new_random_gate_bootstrapping_secret_keyset,
 };
 
 #[test]
@@ -74,6 +74,10 @@ fn or(a: bool, b: bool) -> bool {
   a || b
 }
 
-test_binary_gate!(test_and_gate, and, boots_and);
+fn nand(a: bool, b: bool) -> bool {
+  !and(a, b)
+}
 
+test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
+test_binary_gate!(test_nand_gate, nand, boots_nand);
