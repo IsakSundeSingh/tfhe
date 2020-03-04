@@ -112,8 +112,28 @@ pub fn boots_or(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  unimplemented!()
+  let mu = mod_switch_to_torus32(1, 8);
+  let in_out_params = &bk.params.in_out_params;
+
+  // Compute: (0,1/8) + ca + cb
+  let or = mod_switch_to_torus32(1, 8);
+
+  let temp_result = LweSample {
+    coefficients: vec![0; in_out_params.n as usize],
+    b: or,
+    current_variance: 0f64,
+  };
+
+  let res = temp_result + ca.clone() + cb.clone();
+
+  // If the phase is positive, the result is 1/8,
+  // otherwise the result is -1/8
+  // TODO: Actually implement the bootstrapping so gates can be chained!
+  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
+
+  res
 }
+
 /** bootstrapped And Gate: result = a and b */
 pub fn boots_and(
   ca: &LweSample,
@@ -135,8 +155,8 @@ pub fn boots_and(
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
   // TODO: Actually implement the bootstrapping so gates can be chained!
+  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
   res
   // unimplemented!()
 }
