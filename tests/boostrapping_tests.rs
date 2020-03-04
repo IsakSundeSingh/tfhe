@@ -1,10 +1,10 @@
 use tfhe::bootstrapping::{
-  boots_sym_decrypt, boots_sym_encrypt, new_default_gate_bootstrapping_parameters,
+  boots_and, boots_sym_decrypt, boots_sym_encrypt, new_default_gate_bootstrapping_parameters,
   new_gate_bootstrapping_ciphertext, new_random_gate_bootstrapping_secret_keyset,
 };
 
 #[test]
-fn test_encrypt_decrypt_true() {
+fn test_encrypt_decrypt_true_is_true() {
   let message = true;
   let security = 128;
   let params = new_default_gate_bootstrapping_parameters(security);
@@ -26,3 +26,47 @@ fn test_encrypt_decrypt_false_is_false() {
 
   assert_eq!(message, decrypted);
 }
+
+macro_rules! test_binary_gate {
+  ($test_name: ident, $binary_gate:ident, $encrypted_gate:ident) => {
+    #[test]
+    fn $test_name() {
+      let security = 128;
+      let params = new_default_gate_bootstrapping_parameters(security);
+      let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
+      let cloud_key = &secret_key.cloud;
+      let enc_true = boots_sym_encrypt(true, &secret_key);
+      let enc_false = boots_sym_encrypt(false, &secret_key);
+
+      let every_combo = vec![(true, true), (true, false), (false, true), (false, false)];
+
+      for (a, b) in every_combo {
+        let enc_a = match a {
+          true => &enc_true,
+          false => &enc_false,
+        };
+        let enc_b = match b {
+          true => &enc_true,
+          false => &enc_false,
+        };
+
+        let encrypted = $encrypted_gate(enc_a, enc_b, &cloud_key);
+        let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
+        println!(
+          "Running encrypted binary gate {} {} {} = {}",
+          a,
+          stringify!(and),
+          b,
+          decrypted
+        );
+        assert_eq!(decrypted, $binary_gate(a, b));
+      }
+    }
+  };
+}
+
+fn and(a: bool, b: bool) -> bool {
+  a && b
+}
+
+test_binary_gate!(test_and_gate, and, boots_and);

@@ -7,10 +7,10 @@ use crate::numerics::{approximate_phase, gaussian32};
 #[derive(Clone, Debug, PartialEq)]
 pub struct LweSample {
   /// The coefficients of the mask
-  coefficients: Vec<Torus32>,
-  b: Torus32,
+  pub(crate) coefficients: Vec<Torus32>,
+  pub(crate) b: Torus32,
   /// Average noise of the sample
-  current_variance: f64,
+  pub(crate) current_variance: f64,
 }
 
 impl LweSample {
@@ -117,7 +117,7 @@ impl TFHEGateBootstrappingParameterSet {
 }
 
 pub struct TFHEGateBootstrappingCloudKeySet {
-  params: TFHEGateBootstrappingParameterSet,
+  pub(crate) params: TFHEGateBootstrappingParameterSet,
   bk: LweBootstrappingKey,
   // bk_fft: LweBootstrappingKeyFFT,
 }
@@ -136,7 +136,7 @@ pub struct TFheGateBootstrappingSecretKeySet {
   pub(crate) params: TFHEGateBootstrappingParameterSet,
   pub(crate) lwe_key: LweKey,
   tgsw_key: TGswKey,
-  cloud: TFHEGateBootstrappingCloudKeySet,
+  pub cloud: TFHEGateBootstrappingCloudKeySet,
 }
 impl TFheGateBootstrappingSecretKeySet {
   pub fn new(
@@ -287,7 +287,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
 //to all the Lwe keys that use these params.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LweParams {
-  n: i32,
+  pub(crate) n: i32,
   /// le plus petit bruit tq sur
   pub(crate) alpha_min: f64,
   /// le plus gd bruit qui permet le déchiffrement

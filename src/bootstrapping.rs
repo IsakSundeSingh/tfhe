@@ -1,11 +1,11 @@
-use crate::lwe::LweKey;
 use crate::lwe::{
-  LweBootstrappingKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
+  LweBootstrappingKey, LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
   TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
 };
 use crate::tgsw::{TGswKey, TGswParams};
 use crate::tlwe::TLweParameters;
 
+use crate::numerics::mod_switch_to_torus32;
 //////////////////////////////////////////
 // Gate bootstrapping public interface
 //////////////////////////////////////////
@@ -120,7 +120,25 @@ pub fn boots_and(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  unimplemented!()
+  let mu = mod_switch_to_torus32(1, 8);
+  let in_out_params = &bk.params.in_out_params;
+
+  // Compute: (0,-1/8) + ca + cb
+  let and = mod_switch_to_torus32(-1, 8);
+
+  let temp_result = LweSample {
+    coefficients: vec![0; in_out_params.n as usize],
+    b: and,
+    current_variance: 0f64,
+  };
+  let res = temp_result + ca.clone() + cb.clone();
+
+  // If the phase is positive, the result is 1/8,
+  // otherwise the result is -1/8
+  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
+  // TODO: Actually implement the bootstrapping so gates can be chained!
+  res
+  // unimplemented!()
 }
 /** bootstrapped Xor Gate: result = a xor b */
 pub fn boots_xor(
