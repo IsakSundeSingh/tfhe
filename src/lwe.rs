@@ -92,6 +92,22 @@ impl std::ops::Mul<i32> for LweSample {
   }
 }
 
+impl std::ops::Neg for LweSample {
+  type Output = Self;
+  fn neg(self) -> Self {
+    let Self {
+      coefficients,
+      b,
+      current_variance,
+    } = self;
+    Self {
+      coefficients: coefficients.iter().map(|c| -c).collect(),
+      b: -b,
+      current_variance,
+    }
+  }
+}
+
 #[derive(Clone)]
 pub struct TFHEGateBootstrappingParameterSet {
   pub ks_t: i32,
