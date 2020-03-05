@@ -81,8 +81,14 @@ pub fn boots_sym_decrypt(sample: &LweSample, key: &TFheGateBootstrappingSecretKe
 }
 
 /** bootstrapped Constant (true or false) trivial Gate */
-pub fn boots_constant(value: i32, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
-  unimplemented!()
+pub fn boots_constant(value: bool, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+  let in_out_params = &bk.params.in_out_params;
+  let mu = mod_switch_to_torus32(1, 8);
+  LweSample {
+    coefficients: vec![0; in_out_params.n as usize],
+    b: if value { mu } else { -mu },
+    current_variance: 0f64,
+  }
 }
 
 /** bootstrapped Nand Gate */

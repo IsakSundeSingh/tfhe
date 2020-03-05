@@ -1,7 +1,7 @@
 use tfhe::bootstrapping::boots_xnor;
 use tfhe::bootstrapping::{
-  boots_and, boots_nand, boots_nor, boots_not, boots_or, boots_sym_decrypt, boots_sym_encrypt,
-  boots_xor, new_default_gate_bootstrapping_parameters,
+  boots_and, boots_constant, boots_nand, boots_nor, boots_not, boots_or, boots_sym_decrypt,
+  boots_sym_encrypt, boots_xor, new_default_gate_bootstrapping_parameters,
   new_random_gate_bootstrapping_secret_keyset,
 };
 
@@ -27,6 +27,21 @@ fn test_encrypt_decrypt_false_is_false() {
   let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
 
   assert_eq!(message, decrypted);
+}
+
+#[test]
+fn test_bootstrapping_constant() {
+  let security = 128;
+  let params = new_default_gate_bootstrapping_parameters(security);
+  let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
+  let cloud_key = &secret_key.cloud;
+  let every_combo = vec![true, false];
+
+  for x in every_combo {
+    let bootstrapped = boots_constant(x, &cloud_key);
+    let decrypted = boots_sym_decrypt(&bootstrapped, &secret_key);
+    assert_eq!(x, decrypted);
+  }
 }
 
 macro_rules! test_binary_gate {
