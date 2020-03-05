@@ -230,13 +230,25 @@ pub fn boots_nor(
   // TODO: Actually implement the bootstrapping so gates can be chained!
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
+
 /** bootstrapped AndNY Gate: not(a) and b */
 pub fn boots_andny(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  unimplemented!()
+  let mu = mod_switch_to_torus32(1, 8);
+  let in_out_params = &bk.params.in_out_params;
+
+  // Compute: (0,-1/8) - ca + cb
+  let andny = mod_switch_to_torus32(-1, 8);
+  let temp_result = LweSample::trivial(andny, in_out_params);
+  temp_result - ca.clone() + cb.clone()
+
+  // If the phase is positive, the result is 1/8,
+  // otherwise the result is -1/8
+  // TODO: Actually implement the bootstrapping so gates can be chained!
+  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 /** bootstrapped AndYN Gate: a and not(b) */
 pub fn boots_andyn(
