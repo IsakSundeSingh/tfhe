@@ -100,9 +100,9 @@ impl std::ops::Mul<LweSample> for i32 {
   }
 }
 
-impl std::ops::Neg for LweSample {
+impl std::ops::Not for LweSample {
   type Output = Self;
-  fn neg(self) -> Self {
+  fn not(self) -> Self {
     let Self {
       coefficients,
       b,
