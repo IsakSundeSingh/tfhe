@@ -84,11 +84,19 @@ impl std::ops::Mul<i32> for LweSample {
       current_variance,
     } = self;
 
+    // Overflowed here, using wrapping mul to imitate C++ behavior
     Self {
-      coefficients: coefficients.iter().map(|c| c * p).collect(),
-      b: b * p,
+      coefficients: coefficients.iter().map(|c| c.wrapping_mul(p)).collect(),
+      b: b.wrapping_mul(p),
       current_variance: (p * p) as f64 * current_variance,
     }
+  }
+}
+
+impl std::ops::Mul<LweSample> for i32 {
+  type Output = LweSample;
+  fn mul(self, p: LweSample) -> Self::Output {
+    p * self
   }
 }
 

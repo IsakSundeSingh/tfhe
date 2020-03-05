@@ -1,9 +1,7 @@
-use tfhe::bootstrapping::boots_nand;
-use tfhe::bootstrapping::boots_nor;
-use tfhe::bootstrapping::boots_not;
 use tfhe::bootstrapping::{
-  boots_and, boots_or, boots_sym_decrypt, boots_sym_encrypt,
-  new_default_gate_bootstrapping_parameters, new_random_gate_bootstrapping_secret_keyset,
+  boots_and, boots_nand, boots_nor, boots_not, boots_or, boots_sym_decrypt, boots_sym_encrypt,
+  boots_xor, new_default_gate_bootstrapping_parameters,
+  new_random_gate_bootstrapping_secret_keyset,
 };
 
 #[test]
@@ -109,8 +107,13 @@ fn nor(a: bool, b: bool) -> bool {
   !(a || b)
 }
 
+fn xor(a: bool, b: bool) -> bool {
+  a ^ b
+}
+
 test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
 test_binary_gate!(test_nand_gate, nand, boots_nand);
 test_binary_gate!(test_nor_gate, nor, boots_nor);
+test_binary_gate!(test_xor_gate, xor, boots_xor);
 test_unary_gate!(test_not_gate, not, boots_not);
