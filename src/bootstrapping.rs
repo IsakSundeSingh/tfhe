@@ -102,11 +102,7 @@ pub fn boots_nand(
 
   // Compute: (0,1/8) - ca - cb
   let nand = mod_switch_to_torus32(1, 8);
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: nand,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(nand, in_out_params);
 
   temp_result - ca.clone() - cb.clone()
 
@@ -128,11 +124,7 @@ pub fn boots_or(
   // Compute: (0,1/8) + ca + cb
   let or = mod_switch_to_torus32(1, 8);
 
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: or,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(or, in_out_params);
 
   temp_result + ca.clone() + cb.clone()
 
@@ -154,11 +146,7 @@ pub fn boots_and(
   // Compute: (0,-1/8) + ca + cb
   let and = mod_switch_to_torus32(-1, 8);
 
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: and,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(and, in_out_params);
 
   temp_result + ca.clone() + cb.clone()
 
@@ -180,11 +168,7 @@ pub fn boots_xor(
   // Compute: (0,1/4) + 2*(ca + cb)
   let xor = mod_switch_to_torus32(1, 4);
 
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: xor,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(xor, in_out_params);
 
   temp_result + 2 * ca.clone() + 2 * cb.clone()
 
@@ -205,11 +189,7 @@ pub fn boots_xnor(
 
   // Compute: (0,-1/4) + 2*(-ca-cb)
   let xnor = mod_switch_to_torus32(-1, 4);
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: xnor,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(xnor, in_out_params);
 
   temp_result - 2 * ca.clone() - 2 * cb.clone()
 
@@ -241,11 +221,7 @@ pub fn boots_nor(
   // Compute: (0,-1/8) - ca - cb
   let nor = mod_switch_to_torus32(-1, 8);
 
-  let temp_result = LweSample {
-    coefficients: vec![0; in_out_params.n as usize],
-    b: nor,
-    current_variance: 0f64,
-  };
+  let temp_result = LweSample::trivial(nor, in_out_params);
 
   temp_result - ca.clone() - cb.clone()
 

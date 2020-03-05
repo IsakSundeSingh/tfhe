@@ -21,6 +21,14 @@ impl LweSample {
       current_variance: 0f64,
     }
   }
+
+  /// Creates a noiseless `LweSample` with a given μ
+  pub(crate) fn trivial(mu: i32, params: &LweParams) -> Self {
+    Self {
+      b: mu,
+      ..Self::new(params)
+    }
+  }
 }
 
 impl std::ops::Add<LweSample> for LweSample {
