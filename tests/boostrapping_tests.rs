@@ -1,3 +1,4 @@
+use tfhe::bootstrapping::boots_xnor;
 use tfhe::bootstrapping::{
   boots_and, boots_nand, boots_nor, boots_not, boots_or, boots_sym_decrypt, boots_sym_encrypt,
   boots_xor, new_default_gate_bootstrapping_parameters,
@@ -111,9 +112,14 @@ fn xor(a: bool, b: bool) -> bool {
   a ^ b
 }
 
+fn xnor(a: bool, b: bool) -> bool {
+  a == b
+}
+
 test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
 test_binary_gate!(test_nand_gate, nand, boots_nand);
 test_binary_gate!(test_nor_gate, nor, boots_nor);
 test_binary_gate!(test_xor_gate, xor, boots_xor);
+test_binary_gate!(test_xnor_gate, xnor, boots_xnor);
 test_unary_gate!(test_not_gate, not, boots_not);
