@@ -1,6 +1,6 @@
 use tfhe::bootstrapping::{
   boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
-  boots_orny, boots_xnor, boots_xor,
+  boots_orny, boots_oryn, boots_xnor, boots_xor,
 };
 use tfhe::bootstrapping::{
   boots_sym_decrypt, boots_sym_encrypt, new_default_gate_bootstrapping_parameters,
@@ -145,6 +145,10 @@ fn orny(a: bool, b: bool) -> bool {
   (!a) || b
 }
 
+fn oryn(a: bool, b: bool) -> bool {
+  a || (!b)
+}
+
 test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
 test_binary_gate!(test_nand_gate, nand, boots_nand);
@@ -154,4 +158,5 @@ test_binary_gate!(test_xnor_gate, xnor, boots_xnor);
 test_binary_gate!(test_andny_gate, andny, boots_andny);
 test_binary_gate!(test_andyn_gate, andyn, boots_andyn);
 test_binary_gate!(test_orny_gate, orny, boots_orny);
+test_binary_gate!(test_oryn_gate, oryn, boots_oryn);
 test_unary_gate!(test_not_gate, not, boots_not);
