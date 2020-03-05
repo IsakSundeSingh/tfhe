@@ -1,4 +1,5 @@
 use tfhe::bootstrapping::boots_nand;
+use tfhe::bootstrapping::boots_nor;
 use tfhe::bootstrapping::boots_not;
 use tfhe::bootstrapping::{
   boots_and, boots_or, boots_sym_decrypt, boots_sym_encrypt,
@@ -97,14 +98,19 @@ fn or(a: bool, b: bool) -> bool {
 }
 
 fn nand(a: bool, b: bool) -> bool {
-  !and(a, b)
+  !(a && b)
 }
 
 fn not(x: bool) -> bool {
   !x
 }
 
+fn nor(a: bool, b: bool) -> bool {
+  !(a || b)
+}
+
 test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
 test_binary_gate!(test_nand_gate, nand, boots_nand);
+test_binary_gate!(test_nor_gate, nor, boots_nor);
 test_unary_gate!(test_not_gate, not, boots_not);

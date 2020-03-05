@@ -203,13 +203,31 @@ pub fn boots_not(ca: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSa
 pub fn boots_copy(ca: LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   unimplemented!()
 }
+
 /** bootstrapped Nor Gate: result = not(a or b) */
 pub fn boots_nor(
   ca: &LweSample,
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  unimplemented!()
+  let mu = mod_switch_to_torus32(-1, 8);
+  let in_out_params = &bk.params.in_out_params;
+
+  // Compute: (0,-1/8) - ca - cb
+  let nor = mod_switch_to_torus32(-1, 8);
+
+  let temp_result = LweSample {
+    coefficients: vec![0; in_out_params.n as usize],
+    b: nor,
+    current_variance: 0f64,
+  };
+
+  temp_result - ca.clone() - cb.clone()
+
+  // If the phase is positive, the result is 1/8,
+  // otherwise the result is -1/8
+  // TODO: Actually implement the bootstrapping so gates can be chained!
+  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 /** bootstrapped AndNY Gate: not(a) and b */
 pub fn boots_andny(
