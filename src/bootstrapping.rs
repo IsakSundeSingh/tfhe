@@ -204,11 +204,6 @@ pub fn boots_not(ca: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSa
   !ca.clone()
 }
 
-/** bootstrapped Copy Gate: result = a */
-pub fn boots_copy(ca: LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
-  unimplemented!()
-}
-
 /** bootstrapped Nor Gate: result = not(a or b) */
 pub fn boots_nor(
   ca: &LweSample,
