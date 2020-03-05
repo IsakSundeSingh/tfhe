@@ -24,16 +24,20 @@ pub fn new_default_gate_bootstrapping_parameters(
   const BK_BG_BIT: i32 = 10;
   const KS_BASE_BIT: i32 = 2;
   const KS_LENGTH: i32 = 8;
-  const KS_STDEV: f64 = 2.44e-5; //standard deviation
-  const BK_STDEV: f64 = 7.18e-9; //standard deviation
-  const MAX_STDEV: f64 = 0.012_467; //max standard deviation for a 1/4 msg space
+
+  // Standard deviation
+  const KS_STDEV: f64 = 2.44e-5;
+
+  // Standard deviation
+  const BK_STDEV: f64 = 7.18e-9;
+
+  // Max standard deviation for a 1/4 msg space
+  const MAX_STDEV: f64 = 0.012_467;
+
   let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
   let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
   let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
 
-  // TfheGarbageCollector::register_param(params_in);
-  // TfheGarbageCollector::register_param(params_accum);
-  // TfheGarbageCollector::register_param(params_bk);
   TFHEGateBootstrappingParameterSet::new(KS_LENGTH, KS_BASE_BIT, params_in, params_bk)
 }
 
@@ -45,18 +49,7 @@ pub fn new_random_gate_bootstrapping_secret_keyset(
   let tgsw_key = TGswKey::generate(&params.tgsw_params);
   let bk = LweBootstrappingKey::create(&params, &lwe_key, &tgsw_key);
   TFheGateBootstrappingSecretKeySet::new(params.clone(), bk, lwe_key, tgsw_key)
-  // LweBootstrappingKeyFFT *bkFFT = new_LweBootstrappingKeyFFT(bk);
-  // return new TFheGateBootstrappingSecretKeySet(params, bk, bkFFT, lwe_key, tgsw_key);
 }
-
-//  deletes gate bootstrapping parameters
-// pub fn void delete_gate_bootstrapping_parameters(TFHEGateBootstrappingParameterSet *params);
-
-//  deletes a gate bootstrapping secret key
-//pub fn void delete_gate_bootstrapping_secret_keyset(TFheGateBootstrappingSecretKeySet *keyset);
-
-//  deletes a gate bootstrapping secret key
-//pub fn void delete_gate_bootstrapping_cloud_keyset(TFHEGateBootstrappingCloudKeySet *keyset);
 
 /** generate a new unititialized ciphertext */
 pub fn new_gate_bootstrapping_ciphertext(params: &TFHEGateBootstrappingParameterSet) -> LweSample {
@@ -70,12 +63,6 @@ pub fn new_gate_bootstrapping_ciphertext_array(
 ) -> Vec<LweSample> {
   vec![new_gate_bootstrapping_ciphertext(&params); nbelems as usize]
 }
-
-//  deletes a ciphertext
-// pub fn void delete_gate_bootstrapping_ciphertext(LweSample *sample);
-
-//  deletes a ciphertext array of length nbelems
-// pub fn void delete_gate_bootstrapping_ciphertext_array(int32_t nbelems, LweSample *samples);
 
 /** encrypts a boolean */
 pub fn boots_sym_encrypt(message: bool, key: &TFheGateBootstrappingSecretKeySet) -> LweSample {
@@ -116,9 +103,6 @@ pub fn boots_nand(
   };
 
   temp_result - ca.clone() - cb.clone()
-  // lweNoiselessTrivial(temp_result, NandConst, in_out_params);
-  // lweSubTo(temp_result, ca, in_out_params);
-  // lweSubTo(temp_result, cb, in_out_params);
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
