@@ -338,17 +338,17 @@ impl LweParams {
 
 pub struct LweBootstrappingKey {
   /// paramètre de l'input et de l'output. key: s
-  in_out_params: LweParams,
+  pub(crate) in_out_params: LweParams,
   /// params of the Gsw elems in bk. key: s"
-  bk_params: TGswParams,
+  pub(crate) bk_params: TGswParams,
   /// params of the accum variable key: s"
-  accum_params: TLweParameters,
+  pub(crate) accum_params: TLweParameters,
   /// params after extraction: key: s'
-  extract_params: LweParams,
+  pub(crate) extract_params: LweParams,
   /// the bootstrapping key (s->s")
-  bk: Vec<TGswSample>,
+  pub(crate) bk: Vec<TGswSample>,
   /// the keyswitch key (s'->s)
-  ks: LweKeySwitchKey,
+  pub(crate) ks: LweKeySwitchKey,
 }
 
 impl LweBootstrappingKey {
@@ -405,17 +405,17 @@ impl LweBootstrappingKey {
 
 pub struct LweBootstrappingKeyFFT {
   ///< paramètre de l'input et de l'output. key: s
-  in_out_params: LweParams,
+  pub(crate) in_out_params: LweParams,
   ///< params of the Gsw elems in bk. key: s"
-  bk_params: TGswParams,
+  pub(crate) bk_params: TGswParams,
   ///< params of the accum variable key: s"
-  accum_params: TLweParameters,
+  pub(crate) accum_params: TLweParameters,
   ///< params after extraction: key: s'
-  extract_params: LweParams,
+  pub(crate) extract_params: LweParams,
   ///< the bootstrapping key (s->s")
-  bk_fft: TGswSampleFFT,
+  pub(crate) bk_fft: TGswSampleFFT,
   ///< the keyswitch key (s'->s)
-  ks: LweKeySwitchKey,
+  pub(crate) ks: LweKeySwitchKey,
 }
 
 pub struct LweKeySwitchKey {

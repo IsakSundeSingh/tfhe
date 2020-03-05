@@ -134,6 +134,14 @@ impl TLweSample {
     }
   }
 
+  /// Creates a noiseless `TLweSample` with a given μ
+  pub(crate) fn trivial(mu: TorusPolynomial, params: &TLweParameters) -> Self {
+    Self {
+      b: mu,
+      ..Self::new(params)
+    }
+  }
+
   /// Create an homogeneous tlwe sample
   pub(crate) fn encrypt_zero(&mut self, alpha: f64, key: &TLweKey) {
     let n = key.params.n;
