@@ -1,8 +1,9 @@
-use tfhe::bootstrapping::boots_andny;
-use tfhe::bootstrapping::boots_xnor;
 use tfhe::bootstrapping::{
-  boots_and, boots_constant, boots_nand, boots_nor, boots_not, boots_or, boots_sym_decrypt,
-  boots_sym_encrypt, boots_xor, new_default_gate_bootstrapping_parameters,
+  boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
+  boots_xnor, boots_xor,
+};
+use tfhe::bootstrapping::{
+  boots_sym_decrypt, boots_sym_encrypt, new_default_gate_bootstrapping_parameters,
   new_random_gate_bootstrapping_secret_keyset,
 };
 
@@ -136,6 +137,10 @@ fn andny(a: bool, b: bool) -> bool {
   (!a) && b
 }
 
+fn andyn(a: bool, b: bool) -> bool {
+  a && (!b)
+}
+
 test_binary_gate!(test_and_gate, and, boots_and);
 test_binary_gate!(test_or_gate, or, boots_or);
 test_binary_gate!(test_nand_gate, nand, boots_nand);
@@ -143,4 +148,5 @@ test_binary_gate!(test_nor_gate, nor, boots_nor);
 test_binary_gate!(test_xor_gate, xor, boots_xor);
 test_binary_gate!(test_xnor_gate, xnor, boots_xnor);
 test_binary_gate!(test_andny_gate, andny, boots_andny);
+test_binary_gate!(test_andyn_gate, andyn, boots_andyn);
 test_unary_gate!(test_not_gate, not, boots_not);
