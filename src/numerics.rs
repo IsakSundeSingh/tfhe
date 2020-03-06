@@ -1,7 +1,7 @@
 use crate::tlwe::TorusPolynomial;
 use crate::tlwe::{IntPolynomial, Torus32};
 
-// Gaussian sample centered in message, with standard deviation sigma
+/// Gaussian sample centered in message, with standard deviation sigma
 pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
   use rand::distributions::Distribution;
 
@@ -110,6 +110,76 @@ fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
     n: coefs.len() as i32,
     coefs,
   }
+}
+
+/// X^{a} * source
+pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> TorusPolynomial {
+  let n = source.n;
+  let r#in = &source.coefs;
+  assert!(a >= 0 && a < 2 * n);
+  let mut coefs = vec![0; n as usize];
+
+  if a < n {
+    for i in 0..a {
+      // So that i-a<0 (French: sur que ...)
+      coefs[i as usize] = -source.coefs[(i - a + n) as usize];
+    }
+    for i in a..n {
+      // So that N>i-a>=0 (French: sur que ...)
+      coefs[i as usize] = source.coefs[(i - a) as usize];
+    }
+  } else {
+    let aa = a - n;
+    for i in 0..aa {
+      // So that i-a<0 (French: sur que ...)
+      coefs[i as usize] = source.coefs[(i - aa + n) as usize];
+    }
+    for i in aa..n {
+      // So that N>i-a>=0 (French: sur que ...)
+      coefs[i as usize] = -source.coefs[(i - aa) as usize];
+    }
+  }
+
+  let n = coefs.len() as i32;
+  TorusPolynomial { coefs, n }
+}
+
+//result= (X^{a}-1)*source
+pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
+  a: i32,
+  source: &TorusPolynomial,
+) -> TorusPolynomial {
+  let n = source.n;
+  let mut coefs = vec![0; source.coefs.len()];
+  assert!(a >= 0 && a < 2 * n);
+
+  if a < n {
+    for i in 0..a {
+      // So that i-a<0 (French: Sur que ...)
+      coefs[i as usize] = -source.coefs[(i - a + n) as usize] - source.coefs[i as usize];
+    }
+    for i in a..n {
+      // So that N>i-a>=0 (French: Sur que ...)
+      coefs[i as usize] = source.coefs[(i - a) as usize] - source.coefs[i as usize];
+    }
+  } else {
+    let aa = a - n;
+    for i in 0..aa {
+      // So that i-a<0 (French: Sur que ...)
+      coefs[i as usize] = source.coefs[(i - aa + n) as usize] - source.coefs[i as usize];
+    }
+    for i in aa..n {
+      // So that N>i-a>=0 (French: Sur que ...)
+      coefs[i as usize] = -source.coefs[(i - aa) as usize] - source.coefs[i as usize];
+    }
+  }
+  let n = coefs.len() as i32;
+  TorusPolynomial { n, coefs }
+}
+
+/// Norme Euclidienne d'un IntPolynomial
+pub(crate) fn int_polynomial_norm_sq_2(poly: &IntPolynomial) -> f64 {
+  poly.coefs.iter().map(|c| (c * c) as f64).sum::<f64>()
 }
 
 #[test]

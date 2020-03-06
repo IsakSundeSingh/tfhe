@@ -1,8 +1,8 @@
 use crate::lwe::{LweBootstrappingKey, LweSample};
-use crate::numerics::mod_switch_to_torus32;
+use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai};
 use crate::{
   tgsw::{TGswParams, TGswSample},
-  tlwe::{TLweSample, Torus32, TorusPolynomial},
+  tlwe::{tlwe_mul_by_xai_minus_one, TLweSample, Torus32, TorusPolynomial},
 };
 
 /// # Arguments
@@ -99,45 +99,12 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
   unimplemented!()
 }
 
-//result= X^{a}*source
-pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> TorusPolynomial {
-  let n = source.n;
-  let r#in = &source.coefs;
-  assert!(a >= 0 && a < 2 * n);
-  let mut coefs = vec![0; n as usize];
-
-  if a < n {
-    for i in 0..a {
-      // So that i-a<0 (French: sur que ...)
-      coefs[i as usize] = -source.coefs[(i - a + n) as usize];
-    }
-    for i in a..n {
-      // So that N>i-a>=0 (French: sur que ...)
-      coefs[i as usize] = source.coefs[(i - a) as usize];
-    }
-  } else {
-    let aa = a - n;
-    for i in 0..aa {
-      // So that i-a<0 (French: sur que ...)
-      coefs[i as usize] = source.coefs[(i - aa + n) as usize];
-    }
-    for i in aa..n {
-      // So that N>i-a>=0 (French: sur que ...)
-      coefs[i as usize] = -source.coefs[(i - aa) as usize];
-    }
-  }
-
-  let n = coefs.len() as i32;
-  TorusPolynomial { coefs, n }
-}
-
-/**
- * multiply the accumulator by X^sum(bara_i.s_i)
- * @param accum the TLWE sample to multiply
- * @param bk An array of n TGSW samples where bk_i encodes s_i
- * @param bara An array of n coefficients between 0 and 2N-1
- * @param bk_params The parameters of bk
- */
+/// Multiply the accumulator by X^sum(bara_i.s_i)
+/// # Arguments
+/// * `accum` - The TLWE sample to multiply
+/// * `bk` - An array of n TGSW samples where bk_i encodes s_i
+/// * `bara` - An array of n coefficients between 0 and 2N-1
+/// * `bk_params` - The parameters of bk
 pub(crate) fn tfhe_blind_rotate(
   accum: &mut TLweSample,
   bk: Vec<TGswSample>,
@@ -148,6 +115,7 @@ pub(crate) fn tfhe_blind_rotate(
   let temp = TLweSample::new(&bk_params.tlwe_params);
   let temp2 = &temp;
   let temp3 = &accum;
+
   for i in 0..n as usize {
     let barai = bara[i];
     if barai == 0 {
@@ -165,4 +133,22 @@ pub(crate) fn tfhe_blind_rotate(
   // delete_TLweSample(temp);
 
   unimplemented!()
+}
+
+//tfhe_MuxRotate(TLweSample *result, const TLweSample *accum, const TGswSample *bki, const int32_t barai, const TGswParams *bk_params) {
+fn tfhe_mux_rotate(
+  result: &mut TLweSample,
+  accum: &TLweSample,
+  bki: &TGswSample,
+  barai: i32,
+  bk_params: &TGswParams,
+) {
+  // ACC = BKi*[(X^barai-1)*ACC]+ACC
+  // temp = (X^barai-1)*ACC
+  tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
+  // temp *= BKi
+
+  // tGswExternMulToTLwe(result, bki, bk_params);
+  // ACC += temp
+  // tLweAddTo(result, accum, bk_params->tlwe_params);
 }

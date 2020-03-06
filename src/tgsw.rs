@@ -242,6 +242,85 @@ impl TGswSample {
   }
 }
 
+// Update l'accumulateur ligne 5 de l'algo toujours
+// void tGswTLweDecompH(IntPolynomial* result, const TLweSample* sample,const TGswParams* params);
+// accum *= sample
+pub(crate) fn tgsw_extern_mul_to_tlwe(
+  accum: &mut TLweSample,
+  sample: &TGswSample,
+  params: &TGswParams,
+) {
+  let par = &params.tlwe_params;
+  let n = par.n;
+  let kpl = params.kpl;
+
+  // TODO: improve this new/delete
+  //   IntPolynomial *dec = new_IntPolynomial_array(kpl, N);
+
+  let mut dec = vec![vec![IntPolynomial::new(n); params.l as usize]; (par.k + 1) as usize];
+  tgsw_tlwe_decomposition_h(&mut dec, accum, params);
+
+  // TODO: Remove this and remove mutability-requiring functions
+  accum.clear();
+
+  for i in 0..kpl as usize {}
+
+  //   for (int32_t i = 0; i < kpl; i++) {
+  //       tLweAddMulRTo(accum, &dec[i], &sample->all_sample[i], par);
+  //   }
+  unimplemented!()
+}
+
+/// Fonction de decomposition
+fn tgsw_tlwe_decomposition_h(
+  result: &mut Vec<Vec<IntPolynomial>>,
+  sample: &mut TLweSample,
+  params: &TGswParams,
+) -> IntPolynomial {
+  let k = params.tlwe_params.k;
+  let l = params.l;
+  for i in 0..=k {
+    // b=a[k]
+    tgsw_torus32_polynomial_decomposition_h(
+      &mut result[(i/* /* TODO: Remove this when you figure this out: Don't think this is necessary? */ * l*/)
+        as usize],
+      &mut sample.a[i as usize],
+      params,
+    );
+    //     tGswTorus32PolynomialDecompH(result + (i * l), &sample->a[i], params);
+  }
+  unimplemented!()
+}
+
+fn tgsw_torus32_polynomial_decomposition_h(
+  result: &mut Vec<IntPolynomial>,
+  sample: &mut TorusPolynomial,
+  params: &TGswParams,
+) {
+  let n = params.tlwe_params.n;
+  let l = params.l;
+  let bg_bit = params.bg_bit;
+  let buf = &mut sample.coefs;
+  let mask_mod = params.mask_mod;
+  let half_bg = params.half_bg;
+  let offset = params.offset;
+  // First, add offset to everyone
+  for j in 0..n as usize {
+    buf[j] += offset as i32;
+  }
+
+  // Then, do the decomposition (TODO: in parallel)
+  for p in 0..l as usize {
+    let decal = 32 - (p + 1) as i32 * bg_bit;
+    let res_p = &mut result[p].coefs;
+    for j in 0..n as usize {
+      let temp1 = (buf[j] >> decal) & mask_mod as i32;
+      res_p[j] = temp1 - half_bg;
+    }
+  }
+  panic!("Not sure if this is correctly implemented")
+}
+
 pub struct TGswSampleFFT {
   /// TLweSample* all_sample; (k+1)l TLwe Sample
   all_samples: Vec<TLweSampleFFT>,

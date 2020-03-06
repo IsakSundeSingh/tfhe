@@ -1,5 +1,8 @@
 use crate::lwe::LweParams;
-use crate::numerics::gaussian32;
+use crate::numerics::{
+  gaussian32, int_polynomial_norm_sq_2, torus_polynomial_mul_by_xai_minus_one,
+  torus_polynomial_mul_r,
+};
 use rand::distributions::Distribution;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -166,6 +169,64 @@ impl TLweSample {
 
     self.current_variance = alpha * alpha;
   }
+
+  /// Sets all values to zero
+  /// TODO: Remove this function when things stabilize. We shouldn't need to reuse values like in C++/C
+  pub(crate) fn clear(&mut self) {
+    self.a = self
+      .a
+      .iter()
+      .map(|poly| TorusPolynomial {
+        n: 0,
+        coefs: poly.coefs.iter().map(|_| 0).collect(),
+      })
+      .collect();
+
+    self.b = TorusPolynomial {
+      n: 0,
+      coefs: self.b.coefs.iter().map(|_| 0).collect(),
+    };
+
+    self.current_variance = 0f64;
+  }
+
+  /// self += p * sample
+  pub(crate) fn add_mul_r_(
+    &mut self,
+    p: &IntPolynomial,
+    sample: &TLweSample,
+    params: &TLweParameters,
+  ) {
+    let k = params.k;
+
+    for i in 0..=k as usize {
+      torus_polynomial_mul_r(&mut self.a[i], p, &sample.a[i]);
+    }
+    self.current_variance += int_polynomial_norm_sq_2(&p) * sample.current_variance;
+    unimplemented!()
+  }
+}
+
+/// Mult externe de X^ai-1 par bki
+pub(crate) fn tlwe_mul_by_xai_minus_one(
+  result: &mut TLweSample,
+  ai: i32,
+  bk: &TLweSample,
+  params: &TLweParameters,
+) {
+  let k = params.k;
+  let torus_polynomials = bk
+    .a
+    .iter()
+    .map(|ba| torus_polynomial_mul_by_xai_minus_one(ai, ba))
+    .collect();
+
+  // for i in 0..=k as usize {
+  //   torus_polynomial_mul_by_xai_minus_one(ai, &bk.a[i]);
+  //   // torusPolynomialMulByXaiMinusOne(&result->a[i], ai, &bk->a[i]);
+  // }
+
+  result.a = torus_polynomials;
 }
 
 /// Figure out what this is
