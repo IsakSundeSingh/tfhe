@@ -83,6 +83,13 @@ impl std::ops::Sub<LweSample> for LweSample {
   }
 }
 
+impl std::ops::SubAssign for LweSample {
+  fn sub_assign(&mut self, sample: LweSample) {
+    // Todo: Fix unnecessary clone here
+    *self = self.clone() - sample;
+  }
+}
+
 impl std::ops::Mul<i32> for LweSample {
   type Output = Self;
   fn mul(self, p: i32) -> Self {
@@ -150,7 +157,7 @@ impl TFHEGateBootstrappingParameterSet {
 
 pub struct TFHEGateBootstrappingCloudKeySet {
   pub(crate) params: TFHEGateBootstrappingParameterSet,
-  bk: LweBootstrappingKey,
+  pub(crate) bk: LweBootstrappingKey,
   // bk_fft: LweBootstrappingKeyFFT,
 }
 
@@ -480,6 +487,58 @@ impl LweKeySwitchKey {
           //    lweSymEncryptWithExternalNoise(&result->ks[i][j][h], mess, noise[index], alpha, out_key);
           index += 1;
         }
+      }
+    }
+  }
+}
+
+/// sample = (a',b')
+pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSample {
+  let mut r = LweSample::trivial(sample.b, &ks.out_params);
+
+  lwe_key_switch_translate_from_array(
+    &mut r,
+    &ks.ks,
+    &ks.out_params,
+    sample.coefficients,
+    ks.n,
+    ks.t,
+    ks.base_bit,
+  );
+  r
+}
+
+/// Translates the message of the result sample by -sum(a[i].s[i]) where s is the secret embedded in ks.
+/// # Arguments
+/// * `result` - the LWE sample to translate by `-sum(ai*si)`.
+/// * `ks` - The (n x t x base) key switching key `ks[i][j][k]` encodes k.s[i]/base^(j+1)
+/// * `params` - The common LWE parameters of ks and result
+/// * `ai` - The input torus array
+/// * `n` - The size of the input key
+/// * `t` - The precision of the keyswitch (technically, 1/2.base^t)
+/// * `basebit` - Log_2 of base
+fn lwe_key_switch_translate_from_array(
+  result: &mut LweSample,
+  ks: &Vec<Vec<Vec<LweSample>>>,
+  params: &LweParams,
+  ai: Vec<Torus32>,
+  n: i32,
+  t: i32,
+  base_bit: i32,
+) {
+  // base=2 in [CGGI16]
+  let base = 1 << base_bit;
+  // precision
+  let prec_offset = 1 << (32 - (1 + base_bit * t));
+  let mask = base - 1;
+
+  for i in 0..n as usize {
+    let aibar = ai[i] + prec_offset;
+    for j in 0..t {
+      let aij = (aibar >> (32 - (j + 1) * base_bit)) & mask;
+      if aij != 0 {
+        // TODO: Fix unnecessary allocations here
+        *result -= ks[i][j as usize][aij as usize].clone();
       }
     }
   }

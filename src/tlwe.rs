@@ -1,4 +1,4 @@
-use crate::lwe::LweParams;
+use crate::lwe::{LweParams, LweSample};
 use crate::numerics::{
   gaussian32, int_polynomial_norm_sq_2, torus_polynomial_mul_by_xai_minus_one,
   torus_polynomial_mul_r,
@@ -108,6 +108,22 @@ impl TorusPolynomial {
   }
 }
 
+impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
+  type Output = Self;
+  fn add(self, p: Self) -> Self {
+    assert_eq!(self.coefs.len(), p.coefs.len());
+    Self {
+      n: self.n,
+      coefs: self
+        .coefs
+        .iter()
+        .zip(p.coefs.iter())
+        .map(|(a, b)| a + b)
+        .collect(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TLweSample {
   /// array of length k+1: mask + right term
@@ -204,6 +220,58 @@ impl TLweSample {
     }
     self.current_variance += int_polynomial_norm_sq_2(&p) * sample.current_variance;
     unimplemented!()
+  }
+
+  pub(crate) fn extract_lwe(self, params: &LweParams, rparams: &TLweParameters) -> LweSample {
+    let n = rparams.n;
+    let k = rparams.k;
+    // TODO: This might be incorrect and unnecessary
+    assert_eq!(params.n, k * n);
+    let mut l = LweSample::new(params);
+
+    for i in 0..k {
+      l.coefficients[(i * n) as usize] = self.a[i as usize].coefs[0];
+      for j in 1..n {
+        // l->a[i*N+j] = -x->a[i].coefsT[N+0-j];
+        l.coefficients[(i * n + j) as usize] = -self.a[i as usize].coefs[(n - j) as usize];
+      }
+    }
+    l.b = self.b.coefs[0];
+
+    l
+  }
+}
+
+impl std::ops::Add<TLweSample> for TLweSample {
+  type Output = Self;
+  fn add(self, sample: Self) -> Self {
+    Self {
+      a: self
+        .a
+        .into_iter()
+        .zip(sample.a.into_iter())
+        .map(|(a, b)| a + b)
+        .collect(),
+      b: self.b + sample.b,
+      current_variance: self.current_variance + sample.current_variance,
+      ..self
+    }
+  }
+}
+
+/// TODO: Remove this as it is ugly
+pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
+  *res = TLweSample {
+    a: res
+      .a
+      .iter()
+      .zip(sample.a.iter())
+      // TODO: Fix inefficient memory allocations (clone)
+      .map(|(a, b): (&TorusPolynomial, &TorusPolynomial)| a.clone() + b.clone())
+      .collect(),
+    b: res.b.clone() + sample.b.clone(),
+    current_variance: res.current_variance + sample.current_variance,
+    k: res.k,
   }
 }
 

@@ -242,9 +242,9 @@ impl TGswSample {
   }
 }
 
-// Update l'accumulateur ligne 5 de l'algo toujours
-// void tGswTLweDecompH(IntPolynomial* result, const TLweSample* sample,const TGswParams* params);
-// accum *= sample
+/// Update l'accumulateur ligne 5 de l'algo toujours
+/// void tGswTLweDecompH(IntPolynomial* result, const TLweSample* sample,const TGswParams* params);
+/// accum *= sample
 pub(crate) fn tgsw_extern_mul_to_tlwe(
   accum: &mut TLweSample,
   sample: &TGswSample,
@@ -263,7 +263,10 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
   // TODO: Remove this and remove mutability-requiring functions
   accum.clear();
 
-  for i in 0..kpl as usize {}
+  for i in 0..kpl as usize {
+    // TODO: Figure out if this is supposed to be [0][i] instead, or something else...
+    accum.add_mul_r_(&dec[i][0], &sample.all_sample[i][0], par);
+  }
 
   //   for (int32_t i = 0; i < kpl; i++) {
   //       tLweAddMulRTo(accum, &dec[i], &sample->all_sample[i], par);

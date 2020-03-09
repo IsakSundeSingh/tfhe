@@ -115,7 +115,8 @@ fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
 /// X^{a} * source
 pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> TorusPolynomial {
   let n = source.n;
-  let r#in = &source.coefs;
+  println!("a: {}, n: {}, n * 2: {}", a, n, n * 2);
+  println!("source.coefs.len() (n): {}", source.coefs.len());
   assert!(a >= 0 && a < 2 * n);
   let mut coefs = vec![0; n as usize];
 

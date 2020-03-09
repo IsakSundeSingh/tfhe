@@ -1,24 +1,17 @@
-use crate::lwe::{LweBootstrappingKey, LweSample};
+use crate::lwe::{lwe_key_switch, LweBootstrappingKey, LweSample};
 use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai};
-use crate::{
-  tgsw::{TGswParams, TGswSample},
-  tlwe::{tlwe_mul_by_xai_minus_one, TLweSample, Torus32, TorusPolynomial},
-};
+use crate::tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample};
+use crate::tlwe::{tlwe_add_to, tlwe_mul_by_xai_minus_one, TLweSample, Torus32, TorusPolynomial};
 
 /// # Arguments
 /// * `bk` - The bootstrapping + keyswitch key
 /// * `mu` - The output message (if phase(x)>0)
 /// * `x` - The input sample
 /// returns = LWE(mu) iff phase(x)>0, LWE(-mu) iff phase(x)<0
-pub(crate) fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: &LweSample) -> LweSample {
-  // LweSample *u = new_LweSample(&bk->accum_params->extracted_lweparams);
-
-  // tfhe_bootstrap_woKS(u, bk, mu, x);
+pub(crate) fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: LweSample) -> LweSample {
+  let res = tfhe_bootstrap_without_key_switching(bk, mu, x);
   // Key Switching
-  // lweKeySwitch(result, bk->ks, u);
-
-  // delete_LweSample(u);
-  unimplemented!()
+  lwe_key_switch(&bk.ks, res)
 }
 
 /**
@@ -31,7 +24,7 @@ pub(crate) fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: &LweSampl
 pub(crate) fn tfhe_bootstrap_without_key_switching(
   bk: &LweBootstrappingKey,
   mu: Torus32,
-  x: &LweSample,
+  x: LweSample,
 ) -> LweSample {
   let bk_params = &bk.bk_params;
   let accum_params = &bk.accum_params;
@@ -52,11 +45,7 @@ pub(crate) fn tfhe_bootstrap_without_key_switching(
     test_vec.coefs[i] = mu;
   }
 
-  // tfhe_blindRotateAndExtract(result, testvect, bk->bk, barb, bara, n, bk_params);
-
-  // delete[] bara;
-  // delete_TorusPolynomial(testvect);
-  unimplemented!()
+  tfhe_blind_rotate_and_extract(test_vec, &bk.bk, barb, bara, n, bk_params)
 }
 
 /**
@@ -71,7 +60,7 @@ pub(crate) fn tfhe_bootstrap_without_key_switching(
 
 pub(crate) fn tfhe_blind_rotate_and_extract(
   v: TorusPolynomial,
-  bk: &TGswSample,
+  bk: &Vec<TGswSample>,
   barb: i32,
   bara: Vec<i32>,
   n: i32,
@@ -91,12 +80,8 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
   // else torusPolynomialCopy(testvectbis, v);
 
   let acc = TLweSample::trivial(test_vec_bis, accum_params);
-  // tfhe_blindRotate(acc, bk, bara, n, bk_params);
-  // tLweExtractLweSample(result, acc, extract_params, accum_params);
-
-  // delete_TLweSample(acc);
-  // delete_TorusPolynomial(testvectbis);
-  unimplemented!()
+  let acc = tfhe_blind_rotate(acc, bk, bara, n, bk_params);
+  acc.extract_lwe(extract_params, accum_params)
 }
 
 /// Multiply the accumulator by X^sum(bara_i.s_i)
@@ -106,36 +91,31 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
 /// * `bara` - An array of n coefficients between 0 and 2N-1
 /// * `bk_params` - The parameters of bk
 pub(crate) fn tfhe_blind_rotate(
-  accum: &mut TLweSample,
-  bk: Vec<TGswSample>,
+  accum: TLweSample,
+  bk: &Vec<TGswSample>,
   bara: Vec<i32>,
   n: i32,
   bk_params: &TGswParams,
-) {
-  let temp = TLweSample::new(&bk_params.tlwe_params);
-  let temp2 = &temp;
-  let temp3 = &accum;
+) -> TLweSample {
+  let mut temp = TLweSample::new(&bk_params.tlwe_params);
+  let temp2 = &mut temp;
+  let mut temp3 = accum;
 
   for i in 0..n as usize {
     let barai = bara[i];
     if barai == 0 {
       // Indeed, this is an easy case!
+      // TODO: Figure out why this is an easy case. I'm guessing no work needs to be done for some reason
       continue;
     }
-
-    //tfhe_MuxRotate(temp2, temp3, bk + i, barai, bk_params);
-    //swap(temp2, temp3);
+    tfhe_mux_rotate(temp2, &temp3, &bk[i], barai, bk_params);
+    std::mem::swap(temp2, &mut temp3);
   }
-  // if (temp3 != accum) {
-  //     tLweCopy(accum, temp3, bk_params->tlwe_params);
-  // }
 
-  // delete_TLweSample(temp);
-
-  unimplemented!()
+  // TOOD: Figure out if this was a correct translation
+  temp3
 }
 
-//tfhe_MuxRotate(TLweSample *result, const TLweSample *accum, const TGswSample *bki, const int32_t barai, const TGswParams *bk_params) {
 fn tfhe_mux_rotate(
   result: &mut TLweSample,
   accum: &TLweSample,
@@ -147,8 +127,38 @@ fn tfhe_mux_rotate(
   // temp = (X^barai-1)*ACC
   tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
   // temp *= BKi
-
-  // tGswExternMulToTLwe(result, bki, bk_params);
+  tgsw_extern_mul_to_tlwe(result, bki, bk_params);
   // ACC += temp
-  // tLweAddTo(result, accum, bk_params->tlwe_params);
+  tlwe_add_to(result, accum);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::tlwe::TLweParameters;
+  use rand::Rng;
+  const N: u32 = 500;
+  const ALPHA_IN: f64 = 5e-4;
+  const ALPHA_BK: f64 = 9e-9;
+
+  fn generate_random_key(n: u32) -> Vec<bool> {
+    let mut rng = rand::thread_rng();
+    (0..n).map(|_| rng.gen()).collect()
+  }
+
+  #[test]
+  #[ignore]
+  fn test_blind_rotate() {
+    let mut rng = rand::thread_rng();
+    let key = generate_random_key(N);
+    let bara: Vec<i32> = (0..N)
+      .map(|_| (rng.gen::<u32>() % (2 * N)) as i32)
+      .collect();
+
+    let accum_params = TLweParameters::new(N as i32, 1, ALPHA_BK, 1f64 / 16f64);
+
+    let expected_accum_message = TorusPolynomial::torus_polynomial_uniform(N as i32);
+    let mut init_alpha_accum = 0.2;
+    unimplemented!()
+  }
 }
