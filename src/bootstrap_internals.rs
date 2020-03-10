@@ -137,9 +137,13 @@ mod tests {
   use super::*;
   use crate::tlwe::TLweParameters;
   use rand::Rng;
-  const N: u32 = 500;
+  const BIG_N: u32 = 1024;
+  const SMOL_N: u32 = 500;
   const ALPHA_IN: f64 = 5e-4;
   const ALPHA_BK: f64 = 9e-9;
+  const BG_BIT_BK: i32 = 10;
+  const K: i32 = 1;
+  const L_BK: i32 = 3;
 
   fn generate_random_key(n: u32) -> Vec<bool> {
     let mut rng = rand::thread_rng();
@@ -150,15 +154,22 @@ mod tests {
   #[ignore]
   fn test_blind_rotate() {
     let mut rng = rand::thread_rng();
-    let key = generate_random_key(N);
-    let bara: Vec<i32> = (0..N)
-      .map(|_| (rng.gen::<u32>() % (2 * N)) as i32)
+    let key = generate_random_key(SMOL_N);
+    let bara: Vec<i32> = (0..SMOL_N)
+      .map(|_| (rng.gen::<u32>() % (2 * BIG_N)) as i32)
       .collect();
 
-    let accum_params = TLweParameters::new(N as i32, 1, ALPHA_BK, 1f64 / 16f64);
+    let accum_params = TLweParameters::new(SMOL_N as i32, 1, ALPHA_BK, 1f64 / 16f64);
+    let bk_params = TGswParams::new(L_BK, BG_BIT_BK, accum_params.clone());
+    let bk: Vec<TGswSample> = (0..SMOL_N).map(|_| TGswSample::new(&bk_params)).collect();
 
-    let expected_accum_message = TorusPolynomial::torus_polynomial_uniform(N as i32);
+    let expected_accum_message = TorusPolynomial::torus_polynomial_uniform(BIG_N as i32);
     let mut init_alpha_accum = 0.2;
+    let mut accum = TLweSample::new(&accum_params);
+    accum.current_variance = init_alpha_accum * init_alpha_accum;
+    for i in 0..SMOL_N as usize {
+      // tfhe_blind_rotate(accum, &bk[i], &bara[i], 1, &bk_params);
+    }
     unimplemented!()
   }
 }
