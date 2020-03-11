@@ -262,16 +262,21 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
 
   // TODO: Remove this and remove mutability-requiring functions
   accum.clear();
-
-  for i in 0..kpl as usize {
-    // TODO: Figure out if this is supposed to be [0][i] instead, or something else...
-    accum.add_mul_r_(&dec[i][0], &sample.all_sample[i][0], par);
-  }
+  dec
+    .iter()
+    .zip(sample.all_sample.iter())
+    .for_each(|(d, a)| accum.add_mul_r_(&d[0], &a[0], par));
+  // for i in 0..dec.len() as usize {
+  //   println!("kpl: {}, k: {}, l: {}, i: {}", kpl, par.k, params.l, i);
+  //   // TODO: Figure out if this is supposed to be [0][i] instead, or something else...
+  //   let d = &dec[i][0];
+  //   let ass = &sample.all_sample[i][0];
+  //   accum.add_mul_r_(d, ass, par);
+  // }
 
   //   for (int32_t i = 0; i < kpl; i++) {
   //       tLweAddMulRTo(accum, &dec[i], &sample->all_sample[i], par);
   //   }
-  unimplemented!()
 }
 
 /// Fonction de decomposition
@@ -279,7 +284,7 @@ fn tgsw_tlwe_decomposition_h(
   result: &mut Vec<Vec<IntPolynomial>>,
   sample: &mut TLweSample,
   params: &TGswParams,
-) -> IntPolynomial {
+) {
   let k = params.tlwe_params.k;
   let l = params.l;
   for i in 0..=k {
@@ -292,7 +297,6 @@ fn tgsw_tlwe_decomposition_h(
     );
     //     tGswTorus32PolynomialDecompH(result + (i * l), &sample->a[i], params);
   }
-  unimplemented!()
 }
 
 fn tgsw_torus32_polynomial_decomposition_h(
@@ -321,7 +325,6 @@ fn tgsw_torus32_polynomial_decomposition_h(
       res_p[j] = temp1 - half_bg;
     }
   }
-  panic!("Not sure if this is correctly implemented")
 }
 
 pub struct TGswSampleFFT {

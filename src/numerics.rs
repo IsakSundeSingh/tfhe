@@ -152,6 +152,7 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
 ) -> TorusPolynomial {
   let n = source.n;
   let mut coefs = vec![0; source.coefs.len()];
+  println!("a: {}, n: {}, 2n: {}", a, n, 2 * n);
   assert!(a >= 0 && a < 2 * n);
 
   if a < n {

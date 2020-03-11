@@ -218,8 +218,8 @@ impl TLweSample {
     for i in 0..=k as usize {
       torus_polynomial_mul_r(&mut self.a[i], p, &sample.a[i]);
     }
+
     self.current_variance += int_polynomial_norm_sq_2(&p) * sample.current_variance;
-    unimplemented!()
   }
 
   pub(crate) fn extract_lwe(self, params: &LweParams, rparams: &TLweParameters) -> LweSample {

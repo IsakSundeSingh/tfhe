@@ -80,7 +80,7 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
   // else torusPolynomialCopy(testvectbis, v);
 
   let acc = TLweSample::trivial(test_vec_bis, accum_params);
-  let acc = tfhe_blind_rotate(acc, bk, bara, n, bk_params);
+  let acc = tfhe_blind_rotate(acc, bk, &bara[..], n, bk_params);
   acc.extract_lwe(extract_params, accum_params)
 }
 
@@ -92,8 +92,8 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
 /// * `bk_params` - The parameters of bk
 pub(crate) fn tfhe_blind_rotate(
   accum: TLweSample,
-  bk: &Vec<TGswSample>,
-  bara: Vec<i32>,
+  bk: &[TGswSample],
+  bara: &[i32],
   n: i32,
   bk_params: &TGswParams,
 ) -> TLweSample {
@@ -151,7 +151,6 @@ mod tests {
   }
 
   #[test]
-  #[ignore]
   fn test_blind_rotate() {
     let mut rng = rand::thread_rng();
     let key = generate_random_key(SMOL_N);
@@ -163,13 +162,37 @@ mod tests {
     let bk_params = TGswParams::new(L_BK, BG_BIT_BK, accum_params.clone());
     let bk: Vec<TGswSample> = (0..SMOL_N).map(|_| TGswSample::new(&bk_params)).collect();
 
-    let expected_accum_message = TorusPolynomial::torus_polynomial_uniform(BIG_N as i32);
-    let mut init_alpha_accum = 0.2;
+    let mut expected_accum_message = TorusPolynomial::torus_polynomial_uniform(BIG_N as i32);
+    let init_accum_message = expected_accum_message.clone();
+    let init_alpha_accum = 0.2;
     let mut accum = TLweSample::new(&accum_params);
     accum.current_variance = init_alpha_accum * init_alpha_accum;
+    let mut expected_offset = 0;
+
     for i in 0..SMOL_N as usize {
-      // tfhe_blind_rotate(accum, &bk[i], &bara[i], 1, &bk_params);
+      accum = tfhe_blind_rotate(accum, &bk[i..], &bara[i..], 1, &bk_params);
+
+      if key[i] == true && bara[i] != 0 {
+        expected_offset = (expected_offset + bara[i]) % ((2 * BIG_N) as i32);
+        expected_accum_message = torus_polynomial_mul_by_xai(expected_offset, &init_accum_message);
+      }
+
+      expected_accum_message
+        .coefs
+        .iter()
+        .zip(accum.b.coefs.iter())
+        .for_each(|(a, b)| assert_eq!(a, b))
     }
-    unimplemented!()
+
+    // Now, bootstraprotate: all iterations at once (same offset)
+    // torusPolynomialCopy(faccum->message, initAccumMessage);
+    // faccum->current_variance = initAlphaAccum * initAlphaAccum;
+
+    accum = tfhe_blind_rotate(accum, &bk, &bara, SMOL_N as i32, &bk_params);
+    expected_accum_message
+      .coefs
+      .iter()
+      .zip(accum.b.coefs.iter())
+      .for_each(|(a, b)| assert_eq!(a, b));
   }
 }
