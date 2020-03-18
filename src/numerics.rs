@@ -145,34 +145,39 @@ pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> T
   TorusPolynomial { coefs, n }
 }
 
-//result= (X^{a}-1)*source
+// result = (X^{a}-1)*source
 pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
   a: i32,
   source: &TorusPolynomial,
 ) -> TorusPolynomial {
   let n = source.n;
   let mut coefs = vec![0; source.coefs.len()];
-  println!("a: {}, n: {}, 2n: {}", a, n, 2 * n);
-  assert!(a >= 0 && a < 2 * n);
+  assert!(a >= 0 && a < 2 * n, "a: {}, n: {}, 2n: {}", a, n, 2 * n);
 
   if a < n {
     for i in 0..a {
       // So that i-a<0 (French: Sur que ...)
-      coefs[i as usize] = -source.coefs[(i - a + n) as usize] - source.coefs[i as usize];
+      // Overflowed here, using wrapping sub to imitate C++ behavior
+      coefs[i as usize] =
+        (-source.coefs[(i - a + n) as usize]).wrapping_sub(source.coefs[i as usize]);
     }
     for i in a..n {
       // So that N>i-a>=0 (French: Sur que ...)
-      coefs[i as usize] = source.coefs[(i - a) as usize] - source.coefs[i as usize];
+      // Overflowed here, using wrapping sub to imitate C++ behavior
+      coefs[i as usize] = source.coefs[(i - a) as usize].wrapping_sub(source.coefs[i as usize]);
     }
   } else {
     let aa = a - n;
     for i in 0..aa {
       // So that i-a<0 (French: Sur que ...)
-      coefs[i as usize] = source.coefs[(i - aa + n) as usize] - source.coefs[i as usize];
+      // Overflowed here, using wrapping sub to imitate C++ behavior
+      coefs[i as usize] =
+        source.coefs[(i - aa + n) as usize].wrapping_sub(source.coefs[i as usize]);
     }
     for i in aa..n {
       // So that N>i-a>=0 (French: Sur que ...)
-      coefs[i as usize] = -source.coefs[(i - aa) as usize] - source.coefs[i as usize];
+      // Overflowed here, using wrapping sub to imitate C++ behavior
+      coefs[i as usize] = (-source.coefs[(i - aa) as usize]).wrapping_sub(source.coefs[i as usize]);
     }
   }
   let n = coefs.len() as i32;
@@ -184,25 +189,80 @@ pub(crate) fn int_polynomial_norm_sq_2(poly: &IntPolynomial) -> f64 {
   poly.coefs.iter().map(|c| (c * c) as f64).sum::<f64>()
 }
 
-#[test]
-fn test_poly_multiplier() {
-  let a = IntPolynomial {
-    n: 3,
-    coefs: vec![10, 20, 30],
-  };
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use rand::distributions::Distribution;
 
-  let b = TorusPolynomial {
-    n: 3,
-    coefs: vec![1, 2, 3],
-  };
-
-  let res = poly_multiplier(&a, &b);
-
-  assert_eq!(
-    res,
-    TorusPolynomial {
-      n: 5,
-      coefs: vec![10, 40, 100, 120, 90]
+  #[test]
+  fn test_torus_polynomial_mul_by_xai_minus_one() {
+    /// Unsure what this does, but it works
+    fn anticyclic_get(tab: &[i32], a: i32, n: i32) -> i32 {
+      let agood = ((a % (2 * n)) + (2 * n)) % (2 * n);
+      if agood < n {
+        tab[agood as usize]
+      } else {
+        -tab[(agood - n) as usize]
+      }
     }
-  );
+
+    const NB_TRIALS: i32 = 50;
+    const DIMENSIONS: [i32; 4] = [500, 750, 1024, 2000];
+
+    let mut rng = rand::thread_rng();
+    for &n in DIMENSIONS.iter() {
+      for trial in 0..NB_TRIALS {
+        let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+        let a = (d.sample(&mut rng) % 1_000_000) - 500_000;
+        let ai = ((a % (2 * n)) + (2 * n)) % (2 * n);
+
+        // Fill the polynomial with random coefs
+        let pola = TorusPolynomial::torus_polynomial_uniform(n);
+        let polacopy = pola.clone();
+        let polb = torus_polynomial_mul_by_xai_minus_one(ai, &pola);
+        // Check equality
+        // FIXME: Isn't this a ridicolous test? It checks if pola and polacopy are the same after the function call
+        polacopy
+          .coefs
+          .iter()
+          .zip(pola.coefs.iter())
+          .for_each(|(a, b)| assert_eq!(a, b));
+
+        for j in 0..n {
+          assert_eq!(
+            polb.coefs[j as usize],
+            // Overflowed here, using wrapping sub to imitate C++ behavior
+            anticyclic_get(&polacopy.coefs, j - ai, n).wrapping_sub(anticyclic_get(
+              &polacopy.coefs,
+              j,
+              n
+            ))
+          )
+        }
+      }
+    }
+  }
+
+  #[test]
+  fn test_poly_multiplier() {
+    let a = IntPolynomial {
+      n: 3,
+      coefs: vec![10, 20, 30],
+    };
+
+    let b = TorusPolynomial {
+      n: 3,
+      coefs: vec![1, 2, 3],
+    };
+
+    let res = poly_multiplier(&a, &b);
+
+    assert_eq!(
+      res,
+      TorusPolynomial {
+        n: 5,
+        coefs: vec![10, 40, 100, 120, 90]
+      }
+    );
+  }
 }

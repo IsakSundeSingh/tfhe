@@ -151,6 +151,7 @@ mod tests {
   }
 
   #[test]
+  #[ignore]
   fn test_blind_rotate() {
     let mut rng = rand::thread_rng();
     let key = generate_random_key(SMOL_N);
