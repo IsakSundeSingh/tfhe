@@ -190,6 +190,13 @@ pub(crate) fn int_polynomial_norm_sq_2(poly: &IntPolynomial) -> f64 {
   poly.coefs.iter().map(|c| (c * c) as f64).sum::<f64>()
 }
 
+/// This function return the absolute value of the (centered) fractional part of `d`
+/// i.e. the distance between `d` and its nearest integer
+#[cfg(test)]
+pub(crate) fn abs_frac(d: f64) -> f64 {
+  (d - d.round()).abs()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -265,6 +272,30 @@ mod tests {
     assert_eq!(1 << 31, f64_to_torus_32(-0.5));
     assert_eq!(1 << 30, f64_to_torus_32(0.25));
     assert_eq!(0xC0000000, f64_to_torus_32(-0.25) as u32);
+  }
+
+  #[test]
+  fn test_approximate_phase() {
+    let mut rng = rand::thread_rng();
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    for i in 2..200 {
+      let v = d.sample(&mut rng);
+      let w = approximate_phase(v, i);
+      let dv = torus_32_to_f64(v);
+      let dw = torus_32_to_f64(w);
+      assert!(
+        abs_frac(dv - dw) <= 1f64 / (2f64 * i as f64) + 1e-40,
+        "{} <= {}",
+        abs_frac(dv - dw),
+        1f64 / (2f64 * i as f64) + 1e-40
+      );
+      assert!(
+        abs_frac(i as f64 * dw) <= i as f64 * 1e-9,
+        "{} <= {}",
+        abs_frac(i as f64 * dw),
+        i as f64 * 1e-9
+      );
+    }
   }
 
   #[test]
