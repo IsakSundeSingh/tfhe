@@ -60,7 +60,7 @@ pub(crate) fn tfhe_bootstrap_without_key_switching(
 
 pub(crate) fn tfhe_blind_rotate_and_extract(
   v: TorusPolynomial,
-  bk: &Vec<TGswSample>,
+  bk: &[TGswSample],
   barb: i32,
   bara: Vec<i32>,
   n: i32,

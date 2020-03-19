@@ -519,7 +519,7 @@ pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSamp
 /// * `basebit` - Log_2 of base
 fn lwe_key_switch_translate_from_array(
   result: &mut LweSample,
-  ks: &Vec<Vec<Vec<LweSample>>>,
+  #[allow(clippy::ptr_arg)] ks: &[Vec<Vec<LweSample>>],
   params: &LweParams,
   ai: Vec<Torus32>,
   n: i32,
