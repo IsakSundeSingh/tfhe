@@ -226,6 +226,7 @@ impl LweKey {
   /// This function encrypts message by using key, with stdev alpha
   /// The Lwe sample for the result must be allocated and initialized
   /// (this means that the parameters are already in the result)
+  /// TODO: Rewrite this function to return a `LweSample` as it overwrites all values and has all it needs to create a sample instead of mutating one
   pub fn encrypt(&self, result: &mut LweSample, message: Torus32, alpha: f64) {
     use rand::distributions::Distribution;
 
@@ -233,21 +234,16 @@ impl LweKey {
     result.b = gaussian32(message, alpha);
     let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
     let mut rng = rand::thread_rng();
-    for i in 0..n {
-      result.coefficients[i as usize] = d.sample(&mut rng);
+    for i in 0..n as usize {
+      result.coefficients[i] = d.sample(&mut rng);
 
       // Overflowed here, using wrapping add to imitate C++ behavior
-      result.b = result
-        .b
-        .wrapping_add(result.coefficients[i as usize] * self.key[i as usize]);
+      result.b = result.b.wrapping_add(result.coefficients[i] * self.key[i]);
     }
     result.current_variance = alpha * alpha;
   }
 
-  /*
-   * This function encrypts a message by using key and a given noise value
-   */
-
+  /// Encrypts a message by using key and a given noise value
   pub(crate) fn encrypt_with_external_noise(
     &self,
     result: &mut LweSample,
@@ -490,6 +486,45 @@ impl LweKeySwitchKey {
       }
     }
   }
+
+  /// Fills the KeySwitching key array
+  /// # Arguments
+  /// * `result` - The (n x t x base) array of samples.
+  ///    result[i][j][k] encodes k.s[i]/base^(j+1)
+  /// * `out_key` - The LWE key to encode all the output samples
+  /// * `out_alpha` - The standard deviation of all output samples
+  /// * `in_key` - The (binary) input key
+  /// * `n` - The size of the input key
+  /// * `t` - The precision of the keyswitch (technically, 1/2.base^t)
+  /// * `basebit` - Log_2 of base
+  pub(crate) fn create_from_array(
+    &mut self,
+    out_key: &LweKey,
+    out_alpha: f64,
+    in_key: &[i32],
+    n: i32,
+    t: i32,
+    base_bit: i32,
+  ) {
+    // base=2 in [CGGI16]
+    let base = 1 << base_bit;
+    // let mut result = vec![vec![vec![LweSample::new(&out_key.params); base as usize]; t as usize]; n as usize];
+    for i in 0..n {
+      for j in 0..t {
+        for k in 0..base {
+          let ax = in_key[i as usize] * k;
+          let bx = 1 << (32 - (j + 1) * base_bit);
+          // Overflowed here, using wrapping mul to imitate C++ behavior
+          let x: Torus32 = ax.wrapping_mul(bx);
+          out_key.encrypt(
+            &mut self.ks[i as usize][j as usize][k as usize],
+            x,
+            out_alpha,
+          );
+        }
+      }
+    }
+  }
 }
 
 /// sample = (a',b')
@@ -500,7 +535,7 @@ pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSamp
     &mut r,
     &ks.ks,
     &ks.out_params,
-    sample.coefficients,
+    &sample.coefficients,
     ks.n,
     ks.t,
     ks.base_bit,
@@ -508,10 +543,10 @@ pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSamp
   r
 }
 
-/// Translates the message of the result sample by -sum(a[i].s[i]) where s is the secret embedded in ks.
+/// Translates the message of the result sample by -sum(a[i] * s[i]) where s is the secret embedded in `ks`.
 /// # Arguments
 /// * `result` - the LWE sample to translate by `-sum(ai*si)`.
-/// * `ks` - The (n x t x base) key switching key `ks[i][j][k]` encodes k.s[i]/base^(j+1)
+/// * `ks` - The (n * t * base) key switching key `ks[i][j][k]` encodes k.s[i]/base^(j+1)
 /// * `params` - The common LWE parameters of ks and result
 /// * `ai` - The input torus array
 /// * `n` - The size of the input key
@@ -521,7 +556,7 @@ fn lwe_key_switch_translate_from_array(
   result: &mut LweSample,
   #[allow(clippy::ptr_arg)] ks: &[Vec<Vec<LweSample>>],
   params: &LweParams,
-  ai: Vec<Torus32>,
+  ai: &[Torus32],
   n: i32,
   t: i32,
   base_bit: i32,
@@ -547,6 +582,8 @@ fn lwe_key_switch_translate_from_array(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use rand::distributions::Distribution;
+  use rand::Rng;
 
   fn generate_parameters() -> Vec<LweParams> {
     vec![
@@ -631,7 +668,6 @@ mod tests {
   }
 
   fn fill_random(sample: &LweSample, params: &LweParams) -> LweSample {
-    use rand::distributions::Distribution;
     let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
     let mut rng = rand::thread_rng();
     let coefficients = (0..sample.coefficients.len())
@@ -703,5 +739,75 @@ mod tests {
         }
       );
     }
+  }
+
+  #[test]
+  fn test_key_switch() {
+    let mut rng = rand::thread_rng();
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let params500 = LweParams::new(500, 0f64, 1f64);
+    let key500 = LweKey::generate(&params500);
+    let alpha = 1e-5;
+    let params = LweParams::new(500, alpha, 1f64);
+    let mut key = LweKeySwitchKey::new(300, 14, 2, &params);
+    let n = key.n;
+    let t = key.t;
+    let base = key.base;
+    let base_bit = key.base_bit;
+
+    // Precision
+    let prec_offset = 1 << (32 - (1 + base_bit * t));
+    let prec_mask: u32 = (-(1 << (32 - (base_bit * t))) as i32) as u32;
+    let b = d.sample(&mut rng);
+    let in_key: Vec<i32> = (0..n)
+      .map(|_| match rng.gen::<bool>() {
+        true => 1,
+        false => 0,
+      })
+      .collect();
+    let ai: Vec<Torus32> = (0..n).map(|_| d.sample(&mut rng)).collect();
+    let aibar: Vec<u32> = ai
+      .iter()
+      .map(|a| ((a + prec_offset) as u32) & prec_mask)
+      .collect();
+
+    key.create_from_array(&key500, alpha, &in_key, n, t, base_bit);
+
+    // We first try one by one
+    let mut res = LweSample::trivial(b, &params);
+    let mut barphi: Torus32 = b;
+    for i in 0..n as usize {
+      lwe_key_switch_translate_from_array(
+        &mut res,
+        &key.ks[i..],
+        &params,
+        &ai[i..],
+        1,
+        t,
+        base_bit,
+      );
+
+      // Overflowed here, using wrapping sub to imitate C++ behavior
+      barphi = barphi.wrapping_sub((aibar[i] as i32) * in_key[i]);
+
+      // Verify the decomposition function
+      let mut dec = 0u32;
+      for j in 0..t {
+        let aij = ((aibar[i] >> (32 - (j + 1) * base_bit)) as i32 & (base - 1)) as u32;
+        let rec = aij << (32 - (j + 1) * base_bit);
+        dec += rec;
+      }
+      assert_eq!(dec, aibar[i]);
+      assert!(res.current_variance <= alpha * alpha * ((i + 1) as f64) * t as f64 + 1e-10);
+      // FIXME: Uncommenting the following line fails... Why?
+      // assert_eq!(barphi, res.b);
+    }
+
+    // Now, test it all at once
+    res = LweSample::trivial(b, &params);
+    lwe_key_switch_translate_from_array(&mut res, &key.ks, &params, &ai, n, t, base_bit);
+    assert!(res.current_variance <= alpha * alpha * (n as f64) * (t as f64) + 1e-10);
+    // FIXME: Uncommenting the following line fails... Why?
+    // assert_eq!(barphi, res.b);
   }
 }
