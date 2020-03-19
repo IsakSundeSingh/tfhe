@@ -46,6 +46,15 @@ impl IntPolynomial {
   }
 }
 
+impl From<&[i32]> for IntPolynomial {
+  fn from(s: &[i32]) -> Self {
+    Self {
+      n: s.len() as i32,
+      coefs: s.to_vec(),
+    }
+  }
+}
+
 pub struct TLweKey {
   /// Parameters of the key
   pub(crate) params: TLweParameters,
@@ -104,6 +113,15 @@ impl TorusPolynomial {
     Self {
       n,
       coefs: (0..n as i32).map(|_| d.sample(&mut rng)).collect(),
+    }
+  }
+}
+
+impl From<&[i32]> for TorusPolynomial {
+  fn from(s: &[i32]) -> Self {
+    Self {
+      n: s.len() as i32,
+      coefs: s.to_vec(),
     }
   }
 }
