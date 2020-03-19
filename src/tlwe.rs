@@ -146,8 +146,6 @@ impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
 pub struct TLweSample {
   /// array of length k+1: mask + right term
   pub(crate) a: Vec<TorusPolynomial>,
-  /// FIXME: This is some C++ shit. b is actually referring to a single value within a
-  /// alias of a[k] to get the right term
   pub(crate) b: TorusPolynomial,
   /// avg variance of the sample
   pub(crate) current_variance: f64,
