@@ -298,6 +298,27 @@ mod tests {
     }
   }
 
+  /// Modular gaussian distribution of standard deviation sigma centered on the message, on the Torus32
+  #[test]
+  fn test_gaussian_torus_32() {
+    const MESSAGE1: Torus32 = 123456789;
+    const MESSAGE2: Torus32 = 987654321;
+    let reps1 = gaussian32(MESSAGE1, 0f64);
+    let reps2 = gaussian32(MESSAGE2, 0f64);
+    assert_eq!(MESSAGE1, reps1);
+    assert_eq!(MESSAGE2, reps2);
+    let reps1 = gaussian32(MESSAGE1, 0.01);
+    let reps2 = gaussian32(MESSAGE2, 0.5);
+    assert_ne!(MESSAGE1, reps1);
+    assert_ne!(MESSAGE2, reps2);
+    assert!(
+      (MESSAGE1 - reps1).abs() <= 80_000_000,
+      "{} <= {}",
+      (MESSAGE1 - reps1).abs(),
+      80_000_000
+    );
+  }
+
   #[test]
   fn test_poly_multiplier() {
     let a = IntPolynomial {
