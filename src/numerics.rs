@@ -93,6 +93,9 @@ pub(crate) fn torus_polynomial_mul_r(
   // delete_LagrangeHalfCPolynomial_array(3,tmp);
 }
 
+/// Multiplies two polynomials
+///
+/// **Warning**: Inefficient -> O(n²)
 fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
   assert_eq!(a.n, a.coefs.len() as i32);
   assert_eq!(b.n, b.coefs.len() as i32);
@@ -253,6 +256,15 @@ mod tests {
         }
       }
     }
+  }
+
+  #[test]
+  fn test_float_to_torus_32() {
+    assert_eq!(0, f64_to_torus_32(0f64));
+    assert_eq!(1 << 31, f64_to_torus_32(0.5));
+    assert_eq!(1 << 31, f64_to_torus_32(-0.5));
+    assert_eq!(1 << 30, f64_to_torus_32(0.25));
+    assert_eq!(0xC0000000, f64_to_torus_32(-0.25) as u32);
   }
 
   #[test]
