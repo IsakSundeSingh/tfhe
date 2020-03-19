@@ -184,7 +184,7 @@ pub fn boots_xnor(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  use crate::bootstrap_internals::tfhe_bootstrap;
+  // use crate::bootstrap_internals::tfhe_bootstrap;
   let mu = mod_switch_to_torus32(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -192,12 +192,12 @@ pub fn boots_xnor(
   let xnor = mod_switch_to_torus32(-1, 4);
   let temp_result = LweSample::trivial(xnor, in_out_params);
 
-  let temp = temp_result - 2 * ca.clone() - 2 * cb.clone();
+  temp_result - 2 * ca.clone() - 2 * cb.clone()
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
-  tfhe_bootstrap(&bk.bk, mu, temp)
+  // tfhe_bootstrap(&bk.bk, mu, temp)
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
