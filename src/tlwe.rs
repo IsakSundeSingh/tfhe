@@ -33,14 +33,12 @@ impl TLweParameters {
 
 #[derive(Clone)]
 pub struct IntPolynomial {
-  pub(crate) n: i32,
   pub(crate) coefs: Vec<i32>,
 }
 
 impl IntPolynomial {
   pub(crate) fn new(n: i32) -> Self {
     Self {
-      n,
       coefs: vec![0; n as usize],
     }
   }
@@ -48,10 +46,7 @@ impl IntPolynomial {
 
 impl From<&[i32]> for IntPolynomial {
   fn from(s: &[i32]) -> Self {
-    Self {
-      n: s.len() as i32,
-      coefs: s.to_vec(),
-    }
+    Self { coefs: s.to_vec() }
   }
 }
 

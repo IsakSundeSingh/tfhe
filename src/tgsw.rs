@@ -453,7 +453,7 @@ mod tests {
 
     let coefs: Vec<i32> = (0..n).map(|_| d.sample(&mut rng) % 10 - 5).collect();
     assert_eq!(coefs.len() as i32, n);
-    IntPolynomial { coefs, n }
+    IntPolynomial { coefs }
   }
 
   #[test]

@@ -97,14 +97,14 @@ pub(crate) fn torus_polynomial_mul_r(
 ///
 /// **Warning**: Inefficient -> O(n²)
 fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
-  assert_eq!(a.n, a.coefs.len() as i32);
+  assert_eq!(a.coefs.len(), a.coefs.len());
 
-  let degree = a.n + (b.coefs.len() as i32) - 2;
-  let mut coefs = vec![0; (degree + 1) as usize];
+  let degree = a.coefs.len() + b.coefs.len() - 2;
+  let mut coefs = vec![0; degree + 1];
 
-  for i in 0..a.n {
-    for j in 0..b.coefs.len() as i32 {
-      coefs[(i + j) as usize] += a.coefs[i as usize] * b.coefs[j as usize];
+  for i in 0..a.coefs.len() {
+    for j in 0..b.coefs.len() {
+      coefs[i + j] += a.coefs[i] * b.coefs[j];
     }
   }
 
@@ -336,7 +336,6 @@ mod tests {
   #[test]
   fn test_poly_multiplier() {
     let a = IntPolynomial {
-      n: 3,
       coefs: vec![10, 20, 30],
     };
 
