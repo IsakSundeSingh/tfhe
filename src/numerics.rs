@@ -320,6 +320,25 @@ mod tests {
   }
 
   #[test]
+  /// Converts mu/Msize to a Torus32 for mu in [0,Msize[
+  fn test_mod_switch_to_torus_32() {
+    let mut rng = rand::thread_rng();
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    for i in 2..200 {
+      let j = d.sample(&mut rng) % i;
+      let v: Torus32 = mod_switch_to_torus32(j, i);
+
+      let dv = torus_32_to_f64(v);
+      assert!(
+        abs_frac(dv - j as f64 / i as f64) <= 1f64 / (2f64 * i as f64) + 1e-40,
+        "{} <= {}",
+        abs_frac(dv - j as f64 / i as f64),
+        1f64 / (2f64 * i as f64) + 1e-40
+      );
+    }
+  }
+
+  #[test]
   fn test_poly_multiplier() {
     let a = IntPolynomial {
       n: 3,
