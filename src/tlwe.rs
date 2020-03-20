@@ -61,7 +61,7 @@ impl TLweKey {
   pub(crate) fn new(params: &TLweParameters) -> Self {
     Self {
       params: params.clone(),
-      key: vec![IntPolynomial::new(params.n); params.n as usize],
+      key: vec![IntPolynomial::new(params.n); params.k as usize],
     }
   }
 
