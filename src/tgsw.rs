@@ -169,10 +169,7 @@ impl TGswSample {
                     },
                   )
                   .collect::<Vec<Torus32>>();
-                TorusPolynomial {
-                  n: new_coefs.len() as i32,
-                  coefs: new_coefs,
-                }
+                TorusPolynomial { coefs: new_coefs }
               })
               .collect();
             TLweSample {

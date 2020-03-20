@@ -94,14 +94,12 @@ pub type Torus32 = i32;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct TorusPolynomial {
-  pub(crate) n: i32,
   pub(crate) coefs: Vec<Torus32>,
 }
 
 impl TorusPolynomial {
   pub(crate) fn new(n: i32) -> Self {
     Self {
-      n,
       coefs: vec![0; n as usize],
     }
   }
@@ -111,7 +109,6 @@ impl TorusPolynomial {
     let mut rng = rand::thread_rng();
 
     Self {
-      n,
       coefs: (0..n as i32).map(|_| d.sample(&mut rng)).collect(),
     }
   }
@@ -119,10 +116,7 @@ impl TorusPolynomial {
 
 impl From<&[i32]> for TorusPolynomial {
   fn from(s: &[i32]) -> Self {
-    Self {
-      n: s.len() as i32,
-      coefs: s.to_vec(),
-    }
+    Self { coefs: s.to_vec() }
   }
 }
 
@@ -131,7 +125,6 @@ impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
   fn add(self, p: Self) -> Self {
     assert_eq!(self.coefs.len(), p.coefs.len());
     Self {
-      n: self.n,
       coefs: self
         .coefs
         .iter()
@@ -209,13 +202,11 @@ impl TLweSample {
       .a
       .iter()
       .map(|poly| TorusPolynomial {
-        n: 0,
         coefs: poly.coefs.iter().map(|_| 0).collect(),
       })
       .collect();
 
     self.b = TorusPolynomial {
-      n: 0,
       coefs: self.b.coefs.iter().map(|_| 0).collect(),
     };
 

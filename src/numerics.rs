@@ -98,26 +98,22 @@ pub(crate) fn torus_polynomial_mul_r(
 /// **Warning**: Inefficient -> O(n²)
 fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
   assert_eq!(a.n, a.coefs.len() as i32);
-  assert_eq!(b.n, b.coefs.len() as i32);
 
-  let degree = a.n + b.n - 2;
+  let degree = a.n + (b.coefs.len() as i32) - 2;
   let mut coefs = vec![0; (degree + 1) as usize];
 
   for i in 0..a.n {
-    for j in 0..b.n {
+    for j in 0..b.coefs.len() as i32 {
       coefs[(i + j) as usize] += a.coefs[i as usize] * b.coefs[j as usize];
     }
   }
 
-  TorusPolynomial {
-    n: coefs.len() as i32,
-    coefs,
-  }
+  TorusPolynomial { coefs }
 }
 
 /// X^{a} * source
 pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> TorusPolynomial {
-  let n = source.n;
+  let n = source.coefs.len() as i32;
   assert!(a >= 0 && a < 2 * n, "a: {}, n: {}, n * 2: {}", a, n, n * 2);
   let mut coefs = vec![0; n as usize];
 
@@ -142,8 +138,7 @@ pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> T
     }
   }
 
-  let n = coefs.len() as i32;
-  TorusPolynomial { coefs, n }
+  TorusPolynomial { coefs }
 }
 
 // result = (X^{a}-1)*source
@@ -151,7 +146,7 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
   a: i32,
   source: &TorusPolynomial,
 ) -> TorusPolynomial {
-  let n = source.n;
+  let n = source.coefs.len() as i32;
   let mut coefs = vec![0; source.coefs.len()];
   assert!(a >= 0 && a < 2 * n, "{} >= 0 && {} < {}", a, a, 2 * n);
 
@@ -181,8 +176,8 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
       coefs[i as usize] = (-source.coefs[(i - aa) as usize]).wrapping_sub(source.coefs[i as usize]);
     }
   }
-  let n = coefs.len() as i32;
-  TorusPolynomial { n, coefs }
+
+  TorusPolynomial { coefs }
 }
 
 /// Norme Euclidienne d'un IntPolynomial
@@ -346,7 +341,6 @@ mod tests {
     };
 
     let b = TorusPolynomial {
-      n: 3,
       coefs: vec![1, 2, 3],
     };
 
@@ -355,7 +349,6 @@ mod tests {
     assert_eq!(
       res,
       TorusPolynomial {
-        n: 5,
         coefs: vec![10, 40, 100, 120, 90]
       }
     );
