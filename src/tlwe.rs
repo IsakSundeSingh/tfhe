@@ -58,22 +58,21 @@ pub struct TLweKey {
 }
 
 impl TLweKey {
-  pub(crate) fn new(params: &TLweParameters) -> Self {
-    Self {
-      params: params.clone(),
-      key: vec![IntPolynomial::new(params.n); params.k as usize],
-    }
-  }
-
-  pub(crate) fn generate(&mut self) {
-    let n = self.params.n;
-    let k = self.params.k;
+  /// Generates a random key with the specified parameters.
+  pub(crate) fn generate(params: &TLweParameters) -> Self {
+    let n = params.n;
+    let k = params.k;
     let d = rand_distr::Uniform::new(0, 1);
     let mut rng = rand::thread_rng();
-    for i in 0..k {
-      for j in 0..n {
-        self.key[i as usize].coefs[j as usize] = d.sample(&mut rng);
-      }
+
+    // Fill key with random integers
+    let key: Vec<IntPolynomial> = (0..k)
+      .map(|_| IntPolynomial::from(&(0..n).map(|_| d.sample(&mut rng)).collect::<Vec<i32>>()[..]))
+      .collect();
+
+    Self {
+      key,
+      params: params.clone(),
     }
   }
 }

@@ -78,10 +78,10 @@ pub struct TGswKey {
 }
 
 impl TGswKey {
-  // same key as in TLwe
-  fn new(params: &TGswParams) -> Self {
+  /// Same key as in TLwe
+  pub(crate) fn generate(params: &TGswParams) -> Self {
     let tlwe_params = params.tlwe_params.clone();
-    let tlwe_key = TLweKey::new(&tlwe_params);
+    let tlwe_key = TLweKey::generate(&tlwe_params);
     let key = tlwe_key.key.clone();
     Self {
       params: params.clone(),
@@ -89,12 +89,6 @@ impl TGswKey {
       key,
       tlwe_key,
     }
-  }
-
-  pub(crate) fn generate(params: &TGswParams) -> Self {
-    let mut key = Self::new(params);
-    key.tlwe_key.generate();
-    key
   }
 
   pub(crate) fn encrypt(&self, result: &mut TGswSample, message: i32, alpha: f64) {
@@ -380,7 +374,10 @@ mod tests {
   }
 
   fn generate_keys() -> Vec<TGswKey> {
-    generate_parameters().iter().map(TGswKey::new).collect()
+    generate_parameters()
+      .iter()
+      .map(TGswKey::generate)
+      .collect()
   }
 
   /*
@@ -392,8 +389,7 @@ mod tests {
   #[test]
   fn test_key_generation() {
     for param in generate_parameters() {
-      let mut key = TGswKey::new(&param);
-      key.tlwe_key.generate();
+      let key = TGswKey::generate(&param);
 
       // Assert key is binary (could be eliminated by )
       assert!(key
