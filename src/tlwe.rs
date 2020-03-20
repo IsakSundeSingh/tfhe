@@ -279,11 +279,11 @@ pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
 
 /// Mult externe de X^ai-1 par bki
 pub(crate) fn tlwe_mul_by_xai_minus_one(
-  result: &mut TLweSample,
+  result: &TLweSample,
   ai: i32,
   bk: &TLweSample,
   params: &TLweParameters,
-) {
+) -> TLweSample {
   let k = params.k;
   let torus_polynomials = bk
     .a
@@ -296,7 +296,10 @@ pub(crate) fn tlwe_mul_by_xai_minus_one(
   //   // torusPolynomialMulByXaiMinusOne(&result->a[i], ai, &bk->a[i]);
   // }
 
-  result.a = torus_polynomials;
+  TLweSample {
+    a: torus_polynomials,
+    ..result.clone()
+  }
 }
 
 /// Figure out what this is

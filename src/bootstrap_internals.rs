@@ -100,8 +100,7 @@ pub(crate) fn tfhe_blind_rotate(
   bk_params: &TGswParams,
 ) -> TLweSample {
   let mut temp = TLweSample::new(&bk_params.tlwe_params);
-  let temp2 = &mut temp;
-  let mut temp3 = accum;
+  let mut temp2 = accum;
 
   for i in 0..n as usize {
     let barai = bara[i];
@@ -110,28 +109,30 @@ pub(crate) fn tfhe_blind_rotate(
       // TODO: Figure out why this is an easy case. I'm guessing no work needs to be done for some reason
       continue;
     }
-    tfhe_mux_rotate(temp2, &temp3, &bk[i], barai, bk_params);
-    std::mem::swap(temp2, &mut temp3);
+
+    temp = tfhe_mux_rotate(&temp.clone(), &temp2, &bk[i], barai, bk_params);
+    std::mem::swap(&mut temp, &mut temp2);
   }
 
-  // TOOD: Figure out if this was a correct translation
-  temp3
+  // TODO: Figure out if this was a correct translation
+  temp2
 }
 
 fn tfhe_mux_rotate(
-  result: &mut TLweSample,
+  result: &TLweSample,
   accum: &TLweSample,
   bki: &TGswSample,
   barai: i32,
   bk_params: &TGswParams,
-) {
+) -> TLweSample {
   // ACC = BKi*[(X^barai-1)*ACC]+ACC
   // temp = (X^barai-1)*ACC
-  tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
+  let res = tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
   // temp *= BKi
-  tgsw_extern_mul_to_tlwe(result, bki, bk_params);
+  let res = tgsw_extern_mul_to_tlwe(&res, bki, bk_params);
+  res + accum.clone()
   // ACC += temp
-  tlwe_add_to(result, accum);
+  // tlwe_add_to(result, accum);
 }
 
 #[cfg(test)]
