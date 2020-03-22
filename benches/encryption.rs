@@ -15,7 +15,7 @@ fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("Encryption and decryption");
 
   group.bench_function("encrypt bit", |b| {
-    b.iter(|| boots_sym_encrypt(black_box(message), &secret_key))
+    b.iter_with_large_drop(|| boots_sym_encrypt(black_box(message), &secret_key))
   });
 
   group.bench_function("decrypt bit", |b| {
