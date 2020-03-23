@@ -56,7 +56,7 @@ pub(crate) fn approximate_phase(phase: Torus32, message_size: i32) -> Torus32 {
 /// The constant Msize will indicate on which message space we are working (how many messages possible)
 ///
 /// "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
-pub(crate) fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32 {
+pub(crate) const fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32 {
   // Width of each interval
   let interval: u64 = ((1u64 << 63) / message_size as u64) * 2;
 
