@@ -1,6 +1,6 @@
 use crate::lwe::{LweParams, LweSample};
 use crate::numerics::{gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r};
-use crate::polynomial::{IntPolynomial, TorusPolynomial};
+use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use rand::distributions::Distribution;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,7 +46,7 @@ impl TLweKey {
 
     // Fill key with random integers
     let key: Vec<IntPolynomial> = (0..k)
-      .map(|_| IntPolynomial::from(&(0..n).map(|_| d.sample(&mut rng)).collect::<Vec<i32>>()[..]))
+      .map(|_| IntPolynomial::from((0..n).map(|_| d.sample(&mut rng)).collect::<Vec<i32>>()))
       .collect();
 
     Self {
@@ -96,11 +96,11 @@ impl TLweSample {
     let n = key.params.n;
     let k = key.params.k;
 
-    self.b.coefs = vec![gaussian32(0, alpha); n as usize];
+    self.b = TorusPolynomial::from(vec![gaussian32(0, alpha); n as usize]);
 
     // Random-generate tori
     self.a = (0..k)
-      .map(|_| TorusPolynomial::torus_polynomial_uniform(n))
+      .map(|_| TorusPolynomial::uniform(n as usize))
       .collect();
 
     // torusPolynomialAddMulR(result->b, &key->key[i], &result->a[i]);
@@ -122,14 +122,10 @@ impl TLweSample {
     self.a = self
       .a
       .iter()
-      .map(|poly| TorusPolynomial {
-        coefs: poly.coefs.iter().map(|_| 0).collect(),
-      })
+      .map(|poly| TorusPolynomial::zero(poly.len()))
       .collect();
 
-    self.b = TorusPolynomial {
-      coefs: self.b.coefs.iter().map(|_| 0).collect(),
-    };
+    self.b = TorusPolynomial::zero(self.b.len());
 
     self.current_variance = 0f64;
   }
@@ -158,13 +154,13 @@ impl TLweSample {
     let mut l = LweSample::new(params);
 
     for i in 0..k {
-      l.coefficients[(i * n) as usize] = self.a[i as usize].coefs[0];
+      l.coefficients[(i * n) as usize] = self.a[i as usize].coefs()[0];
       for j in 1..n {
         // l->a[i*N+j] = -x->a[i].coefsT[N+0-j];
-        l.coefficients[(i * n + j) as usize] = -self.a[i as usize].coefs[(n - j) as usize];
+        l.coefficients[(i * n + j) as usize] = -self.a[i as usize].coefs()[(n - j) as usize];
       }
     }
-    l.b = self.b.coefs[0];
+    l.b = self.b.coefs()[0];
 
     l
   }

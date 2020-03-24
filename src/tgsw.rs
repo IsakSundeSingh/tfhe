@@ -1,5 +1,5 @@
 use crate::numerics::Torus32;
-use crate::polynomial::{IntPolynomial, TorusPolynomial};
+use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use crate::tlwe::{TLweKey, TLweParameters, TLweSample, TLweSampleFFT};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -163,7 +163,7 @@ impl TGswSample {
                     },
                   )
                   .collect::<Vec<Torus32>>();
-                TorusPolynomial { coefs: new_coefs }
+                TorusPolynomial::from(new_coefs)
               })
               .collect();
             TLweSample {
@@ -253,13 +253,9 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
     a: accum
       .a
       .iter()
-      .map(|polynomial| TorusPolynomial {
-        coefs: polynomial.coefs.iter().map(|_| 0).collect(),
-      })
+      .map(|polynomial| TorusPolynomial::zero(polynomial.len()))
       .collect(),
-    b: TorusPolynomial {
-      coefs: accum.b.coefs.iter().map(|_| 0).collect(),
-    },
+    b: TorusPolynomial::zero(accum.b.len()),
     current_variance: 0f64,
     k: accum.k,
   };
@@ -408,7 +404,7 @@ mod tests {
       for i in 0..=k as usize {
         let mut row = &mut sample.all_sample[j][i];
         for u in 0..=k {
-          row.a[u as usize] = TorusPolynomial::torus_polynomial_uniform(row.a.len() as i32);
+          row.a[u as usize] = TorusPolynomial::uniform(row.a.len());
         }
         row.current_variance = alpha * alpha;
       }
@@ -461,7 +457,7 @@ mod tests {
 
     let coefs: Vec<i32> = (0..n).map(|_| d.sample(&mut rng) % 10 - 5).collect();
     assert_eq!(coefs.len() as i32, n);
-    IntPolynomial { coefs }
+    IntPolynomial::from(coefs)
   }
 
   #[test]

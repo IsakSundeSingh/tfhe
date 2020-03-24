@@ -117,7 +117,7 @@ fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
     }
   }
 
-  TorusPolynomial { coefs }
+  TorusPolynomial::from(coefs)
 }
 
 /// X^{a} * source
@@ -147,7 +147,7 @@ pub(crate) fn torus_polynomial_mul_by_xai(a: i32, source: &TorusPolynomial) -> T
     }
   }
 
-  TorusPolynomial { coefs }
+  TorusPolynomial::from(coefs)
 }
 
 // result = (X^{a}-1)*source
@@ -186,7 +186,7 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
     }
   }
 
-  TorusPolynomial { coefs }
+  TorusPolynomial::from(coefs)
 }
 
 /// This function return the absolute value of the (centered) fractional part of `d`
@@ -199,6 +199,7 @@ pub(crate) fn abs_frac(d: f64) -> f64 {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::polynomial::Polynomial;
   use rand::distributions::Distribution;
 
   /// Unsure what this does, but it works
@@ -224,7 +225,7 @@ mod tests {
         let ai = ((a % (2 * n)) + (2 * n)) % (2 * n);
 
         // Fill the polynomial with random coefs
-        let pola = TorusPolynomial::torus_polynomial_uniform(n);
+        let pola = TorusPolynomial::uniform(n as usize);
         let polb = torus_polynomial_mul_by_xai_minus_one(ai, &pola);
 
         for j in 0..n {
@@ -251,7 +252,7 @@ mod tests {
         let ai = ((a % (2 * n)) + (2 * n)) % (2 * n);
 
         // Fill the polynomial with random coefs
-        let pola = TorusPolynomial::torus_polynomial_uniform(n);
+        let pola = TorusPolynomial::uniform(n as usize);
         let polb = torus_polynomial_mul_by_xai(ai, &pola);
 
         for j in 0..n {
@@ -339,21 +340,10 @@ mod tests {
 
   #[test]
   fn test_poly_multiplier() {
-    let a = IntPolynomial {
-      coefs: vec![10, 20, 30],
-    };
-
-    let b = TorusPolynomial {
-      coefs: vec![1, 2, 3],
-    };
+    let a = IntPolynomial::from(vec![10, 20, 30]);
+    let b = TorusPolynomial::from(vec![1, 2, 3]);
 
     let res = poly_multiplier(&a, &b);
-
-    assert_eq!(
-      res,
-      TorusPolynomial {
-        coefs: vec![10, 40, 100, 120, 90]
-      }
-    );
+    assert_eq!(res, TorusPolynomial::from(vec![10, 40, 100, 120, 90]));
   }
 }

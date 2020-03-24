@@ -139,7 +139,7 @@ fn tfhe_mux_rotate(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::tlwe::TLweParameters;
+  use crate::{polynomial::Polynomial, tlwe::TLweParameters};
   use rand::Rng;
   use rand_distr::Distribution;
 
@@ -173,7 +173,7 @@ mod tests {
     let bk_params = TGswParams::new(L_BK, BG_BIT_BK, accum_params.clone());
     let bk: Vec<TGswSample> = (0..SMOL_N).map(|_| TGswSample::new(&bk_params)).collect();
 
-    let mut expected_accum_message = TorusPolynomial::torus_polynomial_uniform(BIG_N as i32);
+    let mut expected_accum_message = TorusPolynomial::uniform(BIG_N as usize);
     let init_accum_message = expected_accum_message.clone();
     let init_alpha_accum = 0.2;
     let mut accum = TLweSample::new(&accum_params);
