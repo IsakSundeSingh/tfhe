@@ -1,7 +1,8 @@
 use crate::lwe::{lwe_key_switch, LweBootstrappingKey, LweSample};
-use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai};
+use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai, Torus32};
+use crate::polynomial::TorusPolynomial;
 use crate::tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample};
-use crate::tlwe::{tlwe_add_to, tlwe_mul_by_xai_minus_one, TLweSample, Torus32, TorusPolynomial};
+use crate::tlwe::{tlwe_add_to, tlwe_mul_by_xai_minus_one, TLweSample};
 
 /// # Arguments
 /// * `bk` - The bootstrapping + keyswitch key

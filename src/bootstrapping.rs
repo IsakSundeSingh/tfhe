@@ -3,9 +3,9 @@ use crate::lwe::{
   TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
 };
 use crate::tgsw::{TGswKey, TGswParams};
-use crate::tlwe::{TLweParameters, Torus32};
+use crate::tlwe::TLweParameters;
 
-use crate::numerics::mod_switch_to_torus32;
+use crate::numerics::{mod_switch_to_torus32, Torus32};
 //////////////////////////////////////////
 // Gate bootstrapping public interface
 //////////////////////////////////////////

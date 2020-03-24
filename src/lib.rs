@@ -9,5 +9,6 @@ pub mod bootstrap_internals;
 pub mod bootstrapping;
 pub mod lwe;
 pub mod numerics;
+mod polynomial;
 pub mod tgsw;
 pub mod tlwe;

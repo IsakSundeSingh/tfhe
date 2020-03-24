@@ -1,5 +1,14 @@
-use crate::tlwe::TorusPolynomial;
-use crate::tlwe::{IntPolynomial, Torus32};
+use crate::polynomial::{IntPolynomial, TorusPolynomial};
+use crate::tlwe::TLweSample;
+
+/// Idea:
+/// we may want to represent an element x of the real torus by
+/// the integer rint(2^32.x) modulo 2^32
+///  -- addition, subtraction and integer combinations are native operation
+///  -- modulo 1 is mapped to mod 2^32, which is also native!
+/// This looks much better than using float/doubles, where modulo 1 is not
+/// natural at all.
+pub type Torus32 = i32;
 
 /// Gaussian sample centered in message, with standard deviation sigma
 pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
@@ -178,11 +187,6 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
   }
 
   TorusPolynomial { coefs }
-}
-
-/// Norme Euclidienne d'un IntPolynomial
-pub(crate) fn int_polynomial_norm_sq_2(poly: &IntPolynomial) -> f64 {
-  poly.coefs.iter().map(|c| (c * c) as f64).sum::<f64>()
 }
 
 /// This function return the absolute value of the (centered) fractional part of `d`

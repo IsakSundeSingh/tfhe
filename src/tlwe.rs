@@ -1,8 +1,6 @@
 use crate::lwe::{LweParams, LweSample};
-use crate::numerics::{
-  gaussian32, int_polynomial_norm_sq_2, torus_polynomial_mul_by_xai_minus_one,
-  torus_polynomial_mul_r,
-};
+use crate::numerics::{gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r};
+use crate::polynomial::{IntPolynomial, TorusPolynomial};
 use rand::distributions::Distribution;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -31,25 +29,6 @@ impl TLweParameters {
   }
 }
 
-#[derive(Clone)]
-pub struct IntPolynomial {
-  pub(crate) coefs: Vec<i32>,
-}
-
-impl IntPolynomial {
-  pub(crate) fn new(n: i32) -> Self {
-    Self {
-      coefs: vec![0; n as usize],
-    }
-  }
-}
-
-impl From<&[i32]> for IntPolynomial {
-  fn from(s: &[i32]) -> Self {
-    Self { coefs: s.to_vec() }
-  }
-}
-
 pub struct TLweKey {
   /// Parameters of the key
   pub(crate) params: TLweParameters,
@@ -73,58 +52,6 @@ impl TLweKey {
     Self {
       key,
       params: params.clone(),
-    }
-  }
-}
-
-/// Idea:
-/// we may want to represent an element x of the real torus by
-/// the integer rint(2^32.x) modulo 2^32
-///  -- addition, subtraction and integer combinations are native operation
-///  -- modulo 1 is mapped to mod 2^32, which is also native!
-/// This looks much better than using float/doubles, where modulo 1 is not
-/// natural at all.
-pub type Torus32 = i32;
-
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct TorusPolynomial {
-  pub(crate) coefs: Vec<Torus32>,
-}
-
-impl TorusPolynomial {
-  pub(crate) fn new(n: i32) -> Self {
-    Self {
-      coefs: vec![0; n as usize],
-    }
-  }
-
-  pub(crate) fn torus_polynomial_uniform(n: i32) -> Self {
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
-    let mut rng = rand::thread_rng();
-
-    Self {
-      coefs: (0..n as i32).map(|_| d.sample(&mut rng)).collect(),
-    }
-  }
-}
-
-impl From<&[i32]> for TorusPolynomial {
-  fn from(s: &[i32]) -> Self {
-    Self { coefs: s.to_vec() }
-  }
-}
-
-impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
-  type Output = Self;
-  fn add(self, p: Self) -> Self {
-    assert_eq!(self.coefs.len(), p.coefs.len());
-    Self {
-      coefs: self
-        .coefs
-        .iter()
-        .zip(p.coefs.iter())
-        .map(|(a, b)| a + b)
-        .collect(),
     }
   }
 }
@@ -220,7 +147,7 @@ impl TLweSample {
       torus_polynomial_mul_r(&mut self.a[i], p, &sample.a[i]);
     }
 
-    self.current_variance += int_polynomial_norm_sq_2(&p) * sample.current_variance;
+    self.current_variance += p.norm_squared() * sample.current_variance;
   }
 
   pub(crate) fn extract_lwe(self, params: &LweParams, rparams: &TLweParameters) -> LweSample {

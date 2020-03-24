@@ -1,6 +1,6 @@
-use crate::tlwe::{
-  IntPolynomial, TLweKey, TLweParameters, TLweSample, TLweSampleFFT, Torus32, TorusPolynomial,
-};
+use crate::numerics::Torus32;
+use crate::polynomial::{IntPolynomial, TorusPolynomial};
+use crate::tlwe::{TLweKey, TLweParameters, TLweSample, TLweSampleFFT};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TGswParams {
@@ -360,7 +360,7 @@ pub struct TGswSampleFFT {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::tlwe::TorusPolynomial;
+  use crate::polynomial::TorusPolynomial;
 
   fn generate_parameters() -> Vec<TGswParams> {
     vec![

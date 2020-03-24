@@ -1,8 +1,7 @@
+use crate::numerics::{approximate_phase, gaussian32, Torus32};
 use crate::tgsw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
 use crate::tlwe::TLweKey;
-use crate::tlwe::{TLweParameters, Torus32};
-
-use crate::numerics::{approximate_phase, gaussian32};
+use crate::tlwe::TLweParameters;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LweSample {
