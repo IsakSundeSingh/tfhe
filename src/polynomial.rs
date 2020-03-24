@@ -108,19 +108,14 @@ impl Polynomial<i32> for IntPolynomial {
   }
 }
 
-impl From<&[i32]> for IntPolynomial {
-  fn from(s: &[i32]) -> Self {
+impl<T> From<T> for IntPolynomial
+where
+  T: AsRef<[i32]>,
+{
+  fn from(s: T) -> Self {
+    let coefs = s.as_ref();
     Self {
-      coefs: s.to_vec(),
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-impl From<Vec<i32>> for IntPolynomial {
-  fn from(coefs: Vec<i32>) -> Self {
-    Self {
-      coefs,
+      coefs: coefs.to_vec(),
       cyclicity: Cyclicity::Negacyclic,
     }
   }
@@ -166,19 +161,14 @@ impl Polynomial<Torus32> for TorusPolynomial {
   }
 }
 
-impl From<&[Torus32]> for TorusPolynomial {
-  fn from(s: &[Torus32]) -> Self {
+impl<T> From<T> for TorusPolynomial
+where
+  T: AsRef<[Torus32]>,
+{
+  fn from(s: T) -> Self {
+    let coefs = s.as_ref();
     Self {
-      coefs: s.to_vec(),
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-impl From<Vec<Torus32>> for TorusPolynomial {
-  fn from(coefs: Vec<Torus32>) -> Self {
-    Self {
-      coefs,
+      coefs: coefs.to_vec(),
       cyclicity: Cyclicity::Negacyclic,
     }
   }
