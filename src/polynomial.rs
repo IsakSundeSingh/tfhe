@@ -2,7 +2,7 @@ use crate::numerics::Torus32;
 use num_traits::{int::PrimInt, Zero};
 use rand::distributions::Distribution;
 
-/// Whether or not a polynomial modulus is `X^N + 1` or `X^N - 1`.
+/// Polynomials modulo `X^N + 1` or `X^N - 1`, where `N-1` is the polynomial degree
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) enum Cyclicity {
   /// A constant denoting negacyclic polynomial modulus (`X^N + 1`), to be supplied to the polynomial constructor.
@@ -18,6 +18,11 @@ where
   f64: From<<T as std::ops::Mul>::Output>,
 {
   /// Returns the coefficients of the polynomial.
+  ///
+  /// # Note
+  /// Polynomials are stored in big endian order, meaning the
+  /// coefficient of the highest degree term is first in the given slice,
+  /// and the coefficient of the term with degree 0 is the last element.
   fn coefs(&self) -> &[T];
 
   /// Determines the polynomial modulus' cyclicity.
