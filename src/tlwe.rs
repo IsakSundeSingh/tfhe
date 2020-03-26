@@ -1,5 +1,7 @@
 use crate::lwe::{LweParams, LweSample};
-use crate::numerics::{gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r};
+use crate::numerics::{
+  gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r, Torus32,
+};
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use rand::distributions::Distribution;
 
@@ -60,11 +62,13 @@ impl TLweKey {
 pub struct TLweSample {
   /// array of length k+1: mask + right term
   pub(crate) a: Vec<TorusPolynomial>,
-  pub(crate) b: TorusPolynomial,
+  // This field was actually the last element of `a`
+  // pub(crate) b: TorusPolynomial,
   /// avg variance of the sample
   pub(crate) current_variance: f64,
   pub(crate) k: i32,
 }
+
 impl TLweSample {
   pub(crate) fn new(params: &TLweParameters) -> Self {
     //Small change here:
@@ -73,22 +77,29 @@ impl TLweSample {
     //  &sample->a[0],...,&sample->a[k-1]  and &sample->b
     //or we can also do it in a single for loop
     //  &sample->a[0],...,&sample->a[k]
-    let a = vec![TorusPolynomial::new(params.n); (params.k + 1) as usize];
-    let b = a[params.k as usize].clone();
+    let a = vec![TorusPolynomial::new(params.n); (params.k + 2) as usize];
     Self {
       a,
-      b,
       current_variance: 0f64,
       k: params.k,
     }
   }
 
   /// Creates a noiseless `TLweSample` with a given μ
+  ///
+  /// # Panics
+  ///
+  /// Panics if the number of elements in the new sample is zero
   pub(crate) fn trivial(mu: TorusPolynomial, params: &TLweParameters) -> Self {
-    Self {
-      b: mu,
-      ..Self::new(params)
+    let mut sample = Self::new(params);
+    match sample.a.len() {
+      // If the length is empty, panic
+      0 => {
+        panic!("Trying to create a new TLweSample with a mu value, but number of elements is zero!")
+      }
+      n => sample.a[n - 1] = mu,
     }
+    sample
   }
 
   /// Create an homogeneous tlwe sample
@@ -96,24 +107,43 @@ impl TLweSample {
     let n = key.params.n;
     let k = key.params.k;
 
-    self.b = TorusPolynomial::from(vec![gaussian32(0, alpha); n as usize]);
-
     // Random-generate tori
-    self.a = (0..k)
-      .map(|_| TorusPolynomial::uniform(n as usize))
-      .collect();
+    let a_part = (0..k).map(|_| TorusPolynomial::uniform(n as usize));
 
     // torusPolynomialAddMulR(result->b, &key->key[i], &result->a[i]);
 
-    for i in 0..k {
-      crate::numerics::torus_polynomial_mul_r(
-        &mut self.b,
-        &key.key[i as usize],
-        &self.a[i as usize],
-      );
-    }
+    let a_last_part = TorusPolynomial::from(vec![gaussian32(0, alpha); n as usize]);
+
+    // Multiply key.key with self.a and sum them up, add it to b (last part)
+    let poly_sum = key
+      .key
+      .iter()
+      .zip(self.a.iter())
+      .map(|(a, b)| crate::numerics::poly_multiplier(a, &IntPolynomial::from(b.clone())))
+      .fold(TorusPolynomial::zero(n as usize), |acc, p| acc + p);
+
+    let a = a_part
+      .chain(std::iter::once(a_last_part + poly_sum))
+      .collect();
+    self.a = a;
+
+    // for i in 0..k {
+    //   crate::numerics::torus_polynomial_mul_r(
+    //     &mut self.b,
+    //     &key.key[i as usize],
+    //     &self.a[i as usize],
+    //   );
+    // }
 
     self.current_variance = alpha * alpha;
+  }
+
+  fn encrypt_sym_t(&mut self, message: Torus32, alpha: f64, key: &TLweKey) {
+    self.encrypt_zero(alpha, key);
+    match self.a.len() {
+      0 => panic!("Could not set b as a had length 0!"),
+      n => self.a[n - 1].coefs[0] += message,
+    }
   }
 
   /// Sets all values to zero
@@ -124,8 +154,6 @@ impl TLweSample {
       .iter()
       .map(|poly| TorusPolynomial::zero(poly.len()))
       .collect();
-
-    self.b = TorusPolynomial::zero(self.b.len());
 
     self.current_variance = 0f64;
   }
@@ -149,6 +177,7 @@ impl TLweSample {
   pub(crate) fn extract_lwe(self, params: &LweParams, rparams: &TLweParameters) -> LweSample {
     let n = rparams.n;
     let k = rparams.k;
+
     // TODO: This might be incorrect and unnecessary
     assert_eq!(params.n, k * n);
     let mut l = LweSample::new(params);
@@ -160,8 +189,16 @@ impl TLweSample {
         l.coefficients[(i * n + j) as usize] = -self.a[i as usize].coefs()[(n - j) as usize];
       }
     }
-    l.b = self.b.coefs()[0];
 
+    match self.a.len() {
+      0 => panic!("Cannot get last element of a, as it is empty!"),
+      n => l.b = self.a[n - 1].coefs()[0],
+    }
+
+    match self.a.len() {
+      0 => panic!("Cannot get last element of a, as it is empty!"),
+      n => l.b = self.a[n - 1].coefs()[0],
+    }
     l
   }
 }
@@ -176,7 +213,6 @@ impl std::ops::Add<TLweSample> for TLweSample {
         .zip(sample.a.into_iter())
         .map(|(a, b)| a + b)
         .collect(),
-      b: self.b + sample.b,
       current_variance: self.current_variance + sample.current_variance,
       ..self
     }
@@ -193,7 +229,6 @@ pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
       // TODO: Fix inefficient memory allocations (clone)
       .map(|(a, b): (&TorusPolynomial, &TorusPolynomial)| a.clone() + b.clone())
       .collect(),
-    b: res.b.clone() + sample.b.clone(),
     current_variance: res.current_variance + sample.current_variance,
     k: res.k,
   }
@@ -206,7 +241,6 @@ pub(crate) fn tlwe_mul_by_xai_minus_one(
   bk: &TLweSample,
   params: &TLweParameters,
 ) -> TLweSample {
-  let k = params.k;
   let torus_polynomials = bk
     .a
     .iter()

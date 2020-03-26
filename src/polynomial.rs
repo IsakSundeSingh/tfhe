@@ -194,12 +194,23 @@ where
 impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
   type Output = Self;
   fn add(self, p: Self) -> Self {
-    assert_eq!(self.coefs.len(), p.coefs.len());
+    #[cfg(debug)]
+    {
+      if self.len() != p.len() {
+        println!(
+          "Adding polynomials of differing lengths!: len({}) - len({})",
+          self.len(),
+          p.len()
+        )
+      }
+    }
+
+    let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
+
     Self::from(
-      self
-        .coefs
+      self_copy
         .iter()
-        .zip(p.coefs.iter())
+        .zip(p_copy.iter())
         .map(|(a, b)| a + b)
         .collect::<Vec<_>>(),
     )
@@ -231,8 +242,75 @@ impl From<TorusPolynomial> for IntPolynomial {
   }
 }
 
+fn match_and_pad<T>(
+  a: Vec<T>,
+  b: Vec<T>,
+) -> (std::collections::VecDeque<T>, std::collections::VecDeque<T>)
+where
+  T: Default,
+{
+  let mut diff = a.len() as i32 - b.len() as i32;
+
+  let mut a_copy = std::collections::VecDeque::from(a);
+  let mut b_copy = std::collections::VecDeque::from(b);
+
+  while diff > 0 {
+    b_copy.push_front(T::default());
+    diff -= 1;
+  }
+
+  while diff < 0 {
+    a_copy.push_front(T::default());
+    diff += 1;
+  }
+  (a_copy, b_copy)
+}
+
+impl std::ops::Sub<TorusPolynomial> for TorusPolynomial {
+  type Output = Self;
+  fn sub(self, p: Self) -> Self {
+    #[cfg(debug)]
+    {
+      if self.len() != p.len() {
+        println!(
+          "Subtracting polynomials of differing lengths!: len({}) - len({})",
+          self.len(),
+          p.len()
+        )
+      }
+    }
+
+    let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
+    let vals = self_copy
+      .iter()
+      .zip(p_copy.iter())
+      .map(|(a, b)| a - b)
+      .collect::<Vec<_>>();
+    Self::from(vals)
+  }
+}
+
 fn uniform(n: usize) -> Vec<i32> {
   let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
   let mut rng = rand::thread_rng();
   (0..n as i32).map(|_| d.sample(&mut rng)).collect()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_sub_different_sizes() {
+    fn t(a: &[Torus32], b: &[Torus32], expected: &[Torus32]) {
+      let a = TorusPolynomial::from(a);
+      let b = TorusPolynomial::from(b);
+      let res = a - b;
+      assert_eq!(res, TorusPolynomial::from(expected));
+    }
+
+    t(&[1, 2, 3, 4], &[1, 1, 2, 3, 4], &[-1, 0, 0, 0, 0]);
+    t(&[1, 1, 2, 3, 4], &[1, 2, 3, 4], &[1, 0, 0, 0, 0]);
+    t(&[1, 2, 3, 4], &[1, 2, 3, 4], &[0, 0, 0, 0]);
+  }
 }

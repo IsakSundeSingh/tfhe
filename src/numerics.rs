@@ -81,7 +81,7 @@ pub(crate) fn torus_polynomial_mul_r(
   poly1: &IntPolynomial,
   poly2: &TorusPolynomial,
 ) {
-  let res = poly_multiplier(poly1, &IntPolynomial::from(*poly2));
+  let res = poly_multiplier(poly1, &IntPolynomial::from(poly2.clone()));
 
   result.coefs = result
     .coefs

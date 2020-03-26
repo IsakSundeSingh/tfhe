@@ -255,7 +255,6 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
       .iter()
       .map(|polynomial| TorusPolynomial::zero(polynomial.len()))
       .collect(),
-    b: TorusPolynomial::zero(accum.b.len()),
     current_variance: 0f64,
     k: accum.k,
   };
