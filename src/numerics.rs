@@ -1,4 +1,4 @@
-use crate::polynomial::{IntPolynomial, TorusPolynomial};
+use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use crate::tlwe::TLweSample;
 
 /// Idea:
@@ -81,7 +81,7 @@ pub(crate) fn torus_polynomial_mul_r(
   poly1: &IntPolynomial,
   poly2: &TorusPolynomial,
 ) {
-  let res = poly_multiplier(poly1, poly2);
+  let res = poly_multiplier(poly1, &IntPolynomial::from(*poly2));
 
   result.coefs = result
     .coefs
@@ -105,15 +105,21 @@ pub(crate) fn torus_polynomial_mul_r(
 /// Multiplies two polynomials
 ///
 /// **Warning**: Inefficient -> O(n²)
-fn poly_multiplier(a: &IntPolynomial, b: &TorusPolynomial) -> TorusPolynomial {
-  assert_eq!(a.coefs.len(), a.coefs.len());
+pub(crate) fn poly_multiplier<T, P>(a: &P, b: &P) -> TorusPolynomial
+where
+  T: num_traits::int::PrimInt,
+  P: Polynomial<T>,
+  T: std::ops::Add<Output = T>,
+  Vec<T>: AsRef<[i32]>,
+{
+  assert_eq!(a.len(), a.len());
 
-  let degree = a.coefs.len() + b.coefs.len() - 2;
-  let mut coefs = vec![0; degree + 1];
+  let degree = a.len() + b.len() - 2;
+  let mut coefs = vec![T::zero(); degree + 1];
 
-  for i in 0..a.coefs.len() {
-    for j in 0..b.coefs.len() {
-      coefs[i + j] += a.coefs[i] * b.coefs[j];
+  for i in 0..a.coefs().len() {
+    for j in 0..b.coefs().len() {
+      coefs[i + j] = coefs[i + j] + a.coefs()[i] * b.coefs()[j];
     }
   }
 
@@ -341,7 +347,7 @@ mod tests {
   #[test]
   fn test_poly_multiplier() {
     let a = IntPolynomial::from(vec![10, 20, 30]);
-    let b = TorusPolynomial::from(vec![1, 2, 3]);
+    let b = IntPolynomial::from(vec![1, 2, 3]);
 
     let res = poly_multiplier(&a, &b);
     assert_eq!(res, TorusPolynomial::from(vec![10, 40, 100, 120, 90]));

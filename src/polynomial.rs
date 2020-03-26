@@ -11,11 +11,9 @@ pub(crate) enum Cyclicity {
   Cyclic,
 }
 
-pub(crate) trait Polynomial<T>: std::ops::Add<Self>
+pub(crate) trait Polynomial<T>: std::ops::Add<Self> + std::ops::Mul<Self>
 where
   Self: Sized,
-  T: PrimInt,
-  f64: From<<T as std::ops::Mul>::Output>,
 {
   /// Returns the coefficients of the polynomial.
   ///
@@ -48,12 +46,19 @@ where
   }
 
   /// Euclidean norm, squared
-  fn norm_squared(&self) -> f64 {
+  fn norm_squared(&self) -> f64
+  where
+    f64: From<<T as std::ops::Mul>::Output>,
+    T: PrimInt,
+  {
     self.coefs().iter().map(|&c| f64::from(c * c)).sum::<f64>()
   }
 
   /// Determines whether a polynomial is zero.
-  fn is_zero(&self) -> bool {
+  fn is_zero(&self) -> bool
+  where
+    T: Zero + PartialEq,
+  {
     self.coefs().iter().all(|c| *c == Zero::zero())
   }
 }
@@ -85,6 +90,13 @@ impl std::ops::Add<IntPolynomial> for IntPolynomial {
         .map(|(a, b)| a + b)
         .collect::<Vec<_>>()[..],
     )
+  }
+}
+
+impl std::ops::Mul<IntPolynomial> for IntPolynomial {
+  type Output = Self;
+  fn mul(self, p: Self) -> Self {
+    crate::numerics::poly_multiplier(&self, &p).into()
   }
 }
 
@@ -168,7 +180,7 @@ impl Polynomial<Torus32> for TorusPolynomial {
 
 impl<T> From<T> for TorusPolynomial
 where
-  T: AsRef<[Torus32]>,
+  T: AsRef<[i32]>,
 {
   fn from(s: T) -> Self {
     let coefs = s.as_ref();
@@ -191,6 +203,31 @@ impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
         .map(|(a, b)| a + b)
         .collect::<Vec<_>>(),
     )
+  }
+}
+
+impl std::ops::Mul<TorusPolynomial> for TorusPolynomial {
+  type Output = Self;
+  fn mul(self, p: Self) -> Self {
+    crate::numerics::poly_multiplier(&self, &p)
+  }
+}
+
+impl From<IntPolynomial> for TorusPolynomial {
+  fn from(p: IntPolynomial) -> Self {
+    Self {
+      coefs: p.coefs,
+      cyclicity: p.cyclicity,
+    }
+  }
+}
+
+impl From<TorusPolynomial> for IntPolynomial {
+  fn from(p: TorusPolynomial) -> Self {
+    Self {
+      coefs: p.coefs,
+      cyclicity: p.cyclicity,
+    }
   }
 }
 
