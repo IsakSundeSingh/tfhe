@@ -93,6 +93,24 @@ pub(crate) const fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32
   (phase64 >> 32) as Torus32
 }
 
+// Used to approximate the phase to the nearest message possible in the message space
+// The constant Msize will indicate on which message space we are working (how many messages possible)
+//
+// "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
+pub(crate) fn mod_switch_from_torus32(phase: Torus32, message_size: i32) -> i32 {
+  // width of each intervall
+  let interval: u64 = ((1u64 << 63) / message_size as u64) * 2;
+  let half_interval: u64 = interval / 2;
+  let phase64: u64 = ((phase as u64) << 32).wrapping_add(half_interval);
+  //floor to the nearest multiples of interv
+  (phase64 / interval) as i32
+}
+
+pub(crate) fn decode_message(phase: Torus32, message_space: i32) -> i32 {
+  let log2_ms = message_space.trailing_zeros();
+  (phase.wrapping_add(1 << (32 - log2_ms - 1))) >> (32 - log2_ms)
+}
+
 pub(crate) fn torus_polynomial_mul_r(
   result: &mut TorusPolynomial,
   poly1: &IntPolynomial,
@@ -356,6 +374,24 @@ mod tests {
         abs_frac(dv - j as f64 / i as f64) <= 1f64 / (2f64 * i as f64) + 1e-40,
         "{} <= {}",
         abs_frac(dv - j as f64 / i as f64),
+        1f64 / (2f64 * i as f64) + 1e-40
+      );
+    }
+  }
+
+  #[test]
+  fn test_mod_switch_from_torus_32() {
+    let mut rng = rand::thread_rng();
+    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    for i in 2..200 {
+      let v: Torus32 = d.sample(&mut rng);
+      let w = mod_switch_from_torus32(v, i);
+      let dv = torus_32_to_f64(v);
+      let dw = w as f64 / i as f64;
+      assert!(
+        abs_frac(dv - dw) <= 1f64 / (2f64 * i as f64) + 1e-40,
+        "{} <= {}",
+        abs_frac(dv - dw),
         1f64 / (2f64 * i as f64) + 1e-40
       );
     }
