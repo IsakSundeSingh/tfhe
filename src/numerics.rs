@@ -10,6 +10,23 @@ use crate::tlwe::TLweSample;
 /// natural at all.
 pub type Torus32 = i32;
 
+pub(crate) trait Modulo<RHS = Self> {
+  type Output;
+  fn modulo(&self, rhs: RHS) -> Self::Output;
+}
+
+impl<T: num_traits::PrimInt + num_traits::Signed> Modulo<T> for T {
+  type Output = T;
+  fn modulo(&self, rhs: T) -> Self::Output {
+    let r = *self % rhs;
+    if r < T::zero() {
+      r + rhs.abs()
+    } else {
+      r
+    }
+  }
+}
+
 /// Gaussian sample centered in message, with standard deviation sigma
 pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
   use rand::distributions::Distribution;
