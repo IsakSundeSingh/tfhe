@@ -1,6 +1,6 @@
 use crate::lwe::{LweParams, LweSample};
 use crate::numerics::{
-  gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r, Torus32,
+  gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r, Modulo, Torus32,
 };
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use rand::distributions::Distribution;
@@ -246,6 +246,23 @@ pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
   }
 }
 
+pub(crate) fn mul_by_monomial(x: TLweSample, shift: i32) -> TLweSample {
+  TLweSample {
+    a: x
+      .a
+      .into_iter()
+      .map(|c| {
+        TorusPolynomial::from(crate::polynomial::mul_by_monomial(
+          IntPolynomial::from(c),
+          shift,
+        ))
+      })
+      .collect(),
+    current_variance: x.current_variance,
+    k: x.k,
+  }
+}
+
 /// Mult externe de X^ai-1 par bki
 pub(crate) fn tlwe_mul_by_xai_minus_one(
   result: &TLweSample,
@@ -256,7 +273,7 @@ pub(crate) fn tlwe_mul_by_xai_minus_one(
   let torus_polynomials = bk
     .a
     .iter()
-    .map(|ba| torus_polynomial_mul_by_xai_minus_one(ai, ba))
+    .map(|ba| torus_polynomial_mul_by_xai_minus_one(ai.modulo(2 * params.n), ba))
     .collect();
 
   // for i in 0..=k as usize {

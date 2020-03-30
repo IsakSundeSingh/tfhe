@@ -302,14 +302,17 @@ impl LweKey {
  */
 pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   let n = key.params.n;
-  let mut axs: Torus32 = 0;
   let a: &Vec<Torus32> = &sample.coefficients;
   let k = &key.key;
 
-  for i in 0..n {
-    // Overflowed here, using wrapping add to imitate C++ behavior
-    axs = axs.wrapping_add(a[i as usize] * k[i as usize]);
-  }
+  let axs: Torus32 = a
+    .iter()
+    .zip(k.iter())
+    .fold(0i32, |acc, (a, k)| acc.wrapping_add(a * k));
+  // for i in 0..n {
+  //   // Overflowed here, using wrapping add to imitate C++ behavior
+  //   axs = axs.wrapping_add(a[i as usize] * k[i as usize]);
+  // }
 
   // Overflowed here, using wrapping sub to imitate C++ behavior
   sample.b.wrapping_sub(axs)

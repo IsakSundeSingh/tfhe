@@ -72,10 +72,15 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
   let accum_params = &bk_params.tlwe_params;
   let extract_params = &accum_params.extracted_lweparams;
   let big_n = accum_params.n;
-  let _2n = 2 * big_n;
+  let _2n = 2 * v.len() as i32;
+  println!("big_n {}, v.n {}, barb: {}", big_n, v.len(), barb);
 
   let test_vec_bis = if barb != 0 {
-    torus_polynomial_mul_by_xai(_2n - barb, &v)
+    // `_2n - barb` should be equivalent to `-barb mod _2n`
+    TorusPolynomial::from(crate::polynomial::mul_by_monomial(
+      IntPolynomial::from(v),
+      (-barb).modulo(_2n),
+    ))
   } else {
     v
   };
@@ -100,7 +105,8 @@ pub(crate) fn tfhe_blind_rotate(
   n: i32,
   bk_params: &TGswParams,
 ) -> TLweSample {
-  let mut temp = TLweSample::new(&bk_params.tlwe_params);
+  let mut temp = accum.clone(); //TLweSample::new(&bk_params.tlwe_params);
+  temp.clear();
   let mut temp2 = accum;
 
   for i in 0..n as usize {
@@ -128,10 +134,12 @@ fn tfhe_mux_rotate(
 ) -> TLweSample {
   // ACC = BKi*[(X^barai-1)*ACC]+ACC
   // temp = (X^barai-1)*ACC
-  let res = tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
-  // temp *= BKi
-  let res = tgsw_extern_mul_to_tlwe(&res, bki, bk_params);
-  res + accum.clone()
+  let temp = crate::tlwe::mul_by_monomial(result.clone() + accum.clone(), barai) - accum.clone();
+  accum.clone() + tgsw_extern_mul_to_tlwe(&temp, bki, bk_params)
+  // let res = tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
+  // // temp *= BKi
+  // let res = tgsw_extern_mul_to_tlwe(&res, bki, bk_params);
+  // res + accum.clone()
   // ACC += temp
   // tlwe_add_to(result, accum);
 }
