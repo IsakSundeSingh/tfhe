@@ -1,4 +1,4 @@
-use crate::numerics::Torus32;
+use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
 use rand::distributions::Distribution;
 
@@ -296,6 +296,42 @@ fn uniform(n: usize) -> Vec<i32> {
   (0..n as i32).map(|_| d.sample(&mut rng)).collect()
 }
 
+/// Multiply the polynomial by `x^power`.
+/// If `power` lies outside `[0, 2 * N)` where `N-1` is the maximum degree of the polynomial,
+/// a modulo `2 * N` will be taken.
+pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
+  if power == 0 {
+    return p;
+  }
+
+  let n = p.len() as i32;
+  // let newpower = (dbg!(power).modulo(dbg!(n) as i32)) as usize;
+  // let power = dbg!(newpower);
+  let cycle: bool = (power / n as i32).modulo(2) == 1;
+  let power = power % n as i32;
+  let mut coefs = vec![0; n as usize];
+
+  let shift_first = matches!(p.cyclicity(), Cyclicity::Negacyclic) && (!cycle);
+  let shift_last = matches!(p.cyclicity(), Cyclicity::Negacyclic) && cycle;
+
+  for j in 0..power {
+    coefs[(j.modulo(n)) as usize] = if shift_first {
+      -p.coefs()[((n - power + j).modulo(n)) as usize]
+    } else {
+      p.coefs()[((n - power + j).modulo(n)) as usize]
+    }
+  }
+
+  for j in power..n {
+    coefs[(j.modulo(n)) as usize] = if shift_last {
+      -p.coefs()[((j - power).modulo(n)) as usize]
+    } else {
+      p.coefs()[((j - power).modulo(n)) as usize]
+    }
+  }
+  IntPolynomial::with(&coefs, p.cyclicity())
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -312,5 +348,50 @@ mod tests {
     t(&[1, 2, 3, 4], &[1, 1, 2, 3, 4], &[-1, 0, 0, 0, 0]);
     t(&[1, 1, 2, 3, 4], &[1, 2, 3, 4], &[1, 0, 0, 0, 0]);
     t(&[1, 2, 3, 4], &[1, 2, 3, 4], &[0, 0, 0, 0]);
+  }
+
+  #[test]
+  #[ignore]
+  fn test_mul_by_monomial() {
+    let coefs: Vec<i32> = (0..=9).collect();
+    let m = 21;
+    let mr = m as u8;
+    let p = IntPolynomial::from(coefs);
+    let s = -1;
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), 4),
+      IntPolynomial::from((6..=9).map(|x| x * s).chain(0..=5).collect::<Vec<_>>())
+    );
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), 10),
+      IntPolynomial::from((0..=9).map(|x| x * s).collect::<Vec<_>>())
+    );
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), 14),
+      IntPolynomial::from((6..=9).chain((0..=5).map(|x| x * s)).collect::<Vec<_>>())
+    );
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), 20),
+      IntPolynomial::from((0..=9).collect::<Vec<_>>())
+    );
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), 24),
+      IntPolynomial::from(((6..=9).map(|x| x * s)).chain(0..=5).collect::<Vec<_>>())
+    );
+
+    assert_eq!(
+      mul_by_monomial(p.clone(), -4),
+      IntPolynomial::from((4..=9).chain((0..=3).map(|x| x * s)).collect::<Vec<_>>())
+    );
+    // @test mul_by_monomial(p, -4) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
+    // @test mul_by_monomial(p, -10) == Polynomial(mtp.([s .* (0:9);]), pm)
+    // @test mul_by_monomial(p, -14) == Polynomial(mtp.([s .* (4:9); 0:3]), pm)
+    // @test mul_by_monomial(p, -20) == Polynomial(mtp.([0:9;]), pm)
+    // @test mul_by_monomial(p, -24) == Polynomial(mtp.([4:9; s .* (0:3)]), pm)
   }
 }
