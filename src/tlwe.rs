@@ -219,6 +219,23 @@ impl std::ops::Add<TLweSample> for TLweSample {
   }
 }
 
+impl std::ops::Sub<TLweSample> for TLweSample {
+  type Output = Self;
+  #[allow(clippy::suspicious_arithmetic_impl)]
+  fn sub(self, sample: Self) -> Self {
+    Self {
+      a: self
+        .a
+        .into_iter()
+        .zip(sample.a.into_iter())
+        .map(|(a, b)| a - b)
+        .collect(),
+      current_variance: self.current_variance + sample.current_variance,
+      ..self
+    }
+  }
+}
+
 /// TODO: Remove this as it is ugly
 pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
   *res = TLweSample {
