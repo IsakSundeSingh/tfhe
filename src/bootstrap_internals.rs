@@ -1,6 +1,6 @@
 use crate::lwe::{lwe_key_switch, LweBootstrappingKey, LweSample};
-use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai, Torus32};
-use crate::polynomial::TorusPolynomial;
+use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai, Modulo, Torus32};
+use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use crate::tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample};
 use crate::tlwe::{tlwe_add_to, tlwe_mul_by_xai_minus_one, TLweSample};
 
@@ -33,12 +33,13 @@ pub(crate) fn tfhe_bootstrap_without_key_switching(
   let big_n = accum_params.n;
   let n_x_2 = 2 * big_n;
   let n = in_params.n;
-  let mut bara = vec![0; big_n as usize];
 
-  let barb = mod_switch_to_torus32(x.b, n_x_2);
-  for i in 0..n as usize {
-    bara[i] = mod_switch_to_torus32(x.coefficients[i], n_x_2);
-  }
+  let barb = crate::numerics::decode_message(x.b, n_x_2);
+  let bara: Vec<i32> = x
+    .coefficients
+    .iter()
+    .map(|c| crate::numerics::decode_message(*c, n_x_2))
+    .collect();
 
   // The initial testvec = [mu,mu,mu,...,mu]
   let test_vec = TorusPolynomial::from(
