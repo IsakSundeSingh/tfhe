@@ -194,11 +194,6 @@ impl TLweSample {
       0 => panic!("Cannot get last element of a, as it is empty!"),
       n => l.b = self.a[n - 1].coefs()[0],
     }
-
-    match self.a.len() {
-      0 => panic!("Cannot get last element of a, as it is empty!"),
-      n => l.b = self.a[n - 1].coefs()[0],
-    }
     l
   }
 }
