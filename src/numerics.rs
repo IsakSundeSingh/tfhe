@@ -140,17 +140,16 @@ pub(crate) fn torus_polynomial_mul_r(
 /// Multiplies two polynomials
 ///
 /// **Warning**: Inefficient -> O(n²)
-pub(crate) fn poly_multiplier<T, P>(a: &P, b: &P) -> TorusPolynomial
+#[cfg(not(feature = "fft"))]
+pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial
 where
-  T: num_traits::int::PrimInt,
-  P: Polynomial<T>,
-  T: std::ops::Add<Output = T>,
-  Vec<T>: AsRef<[i32]>,
+  P1: Polynomial<i32>,
+  P2: Polynomial<i32>,
 {
-  assert_eq!(a.len(), a.len());
+  assert_eq!(a.len(), b.len());
 
   let degree = a.len() + b.len() - 2;
-  let mut coefs = vec![T::zero(); degree + 1];
+  let mut coefs = vec![0; degree + 1];
 
   for i in 0..a.coefs().len() {
     for j in 0..b.coefs().len() {
@@ -159,6 +158,97 @@ where
   }
 
   TorusPolynomial::from(coefs)
+}
+
+/// Multiplies two polynomials using FFT
+///
+/// Efficient -> O(nlogn)
+#[cfg(feature = "fft")]
+#[allow(clippy::many_single_char_names)]
+pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial
+where
+  P1: Polynomial<i32>,
+  P2: Polynomial<i32>,
+{
+  // Algorithm found at https://math.stackexchange.com/questions/764727/concrete-fft-polynomial-multiplication-example
+
+  fn is_power_of_2(x: usize) -> bool {
+    (x & (x - 1)) == 0
+  }
+  use num_traits::Zero;
+  use rustfft::num_complex::Complex;
+  use rustfft::FFTplanner;
+
+  assert_eq!(a.len(), a.len());
+
+  let degree = a.len() + b.len() - 2;
+  // Optionally pad these to a power of 2 length for a more optimal FFT
+  let mut p: Vec<_> = a
+    .coefs()
+    .iter()
+    .rev()
+    .map(|x| f64::from(*x))
+    .chain(std::iter::repeat(0f64).take(b.len() - 1))
+    .map(|x| Complex::new(x, 0f64))
+    .collect();
+  if !is_power_of_2(p.len()) {
+    let mut power = 1;
+    while power < p.len() {
+      power *= 2;
+    }
+    p.extend(
+      std::iter::repeat(Complex::<f64>::zero())
+        .take(power - p.len())
+        .collect::<Vec<Complex<f64>>>(),
+    );
+  }
+  let mut q: Vec<Complex<f64>> = b
+    .coefs()
+    .iter()
+    .rev()
+    .map(|x| f64::from(*x))
+    .chain(std::iter::repeat(0f64).take(a.len() - 1))
+    .map(|x| Complex::new(x, 0f64))
+    .collect();
+  if !is_power_of_2(q.len()) {
+    let mut power = 1;
+    while power < q.len() {
+      power *= 2;
+    }
+    q.extend(
+      std::iter::repeat(num_traits::identities::Zero::zero())
+        .take(power - q.len())
+        .collect::<Vec<Complex<f64>>>(),
+    );
+  }
+
+  let mut p_out = vec![num_traits::identities::Zero::zero(); p.len()];
+  let mut q_out = vec![num_traits::identities::Zero::zero(); q.len()];
+
+  // Create a FFT planner for a FFT
+  let mut planner = FFTplanner::new(false);
+  let fft = planner.plan_fft(p.len());
+  fft.process(&mut p, &mut p_out);
+  fft.process(&mut q, &mut q_out);
+
+  let mut r: Vec<_> = p_out
+    .into_iter()
+    .zip(q_out.into_iter())
+    .map(|(p_c, q_c)| (p_c / (p.len() as f64).sqrt()) * (q_c / (q.len() as f64).sqrt()))
+    .collect();
+
+  let mut res = vec![num_traits::identities::Zero::zero(); r.len()];
+  // Create a FFT planner for the inverse FFT
+  let fft = FFTplanner::new(true).plan_fft(r.len());
+  fft.process(&mut r, &mut res);
+  let coefs: Vec<i32> = res
+    .into_iter()
+    .take(degree + 1)
+    .map(|x| x.re.round() as i32)
+    .rev()
+    .collect();
+
+  TorusPolynomial::from(&coefs)
 }
 
 /// X^{a} * source
