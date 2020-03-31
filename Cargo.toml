@@ -21,6 +21,9 @@ fft = [ "rustfft" ]
 
 default = [ "fft" ]
 
+[profile.bench]
+debug = true
+
 [[bench]]
 name = "encryption"
 harness = false
