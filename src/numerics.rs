@@ -116,7 +116,7 @@ pub(crate) fn torus_polynomial_mul_r(
   poly1: &IntPolynomial,
   poly2: &TorusPolynomial,
 ) {
-  let res = poly_multiplier(poly1, &IntPolynomial::from(poly2.clone()));
+  let res = poly_multiplier(poly1, poly2);
 
   result.coefs = result
     .coefs
@@ -124,17 +124,6 @@ pub(crate) fn torus_polynomial_mul_r(
     .zip(res.coefs.iter())
     .map(|(a, b)| a + b)
     .collect();
-  // let tmp = crate::tlwe::LagrangeHalfCPolynomial
-  // const int32_t N = poly1->N;
-  // LagrangeHalfCPolynomial* tmp = new_LagrangeHalfCPolynomial_array(3,N);
-  // TorusPolynomial* tmpr = new_TorusPolynomial(N);
-  // IntPolynomial_ifft(tmp+0,poly1);
-  // TorusPolynomial_ifft(tmp+1,poly2);
-  // LagrangeHalfCPolynomialMul(tmp+2,tmp+0,tmp+1);
-  // TorusPolynomial_fft(tmpr, tmp+2);
-  // torusPolynomialAddTo(result, tmpr);
-  // delete_TorusPolynomial(tmpr);
-  // delete_LagrangeHalfCPolynomial_array(3,tmp);
 }
 
 /// Multiplies two polynomials

@@ -109,9 +109,6 @@ impl TLweSample {
 
     // Random-generate tori
     let a_part = (0..k).map(|_| TorusPolynomial::uniform(n as usize));
-
-    // torusPolynomialAddMulR(result->b, &key->key[i], &result->a[i]);
-
     let a_last_part = TorusPolynomial::from(vec![gaussian32(0, alpha); n as usize]);
 
     // Multiply key.key with self.a and sum them up, add it to b (last part)
@@ -119,7 +116,7 @@ impl TLweSample {
       .key
       .iter()
       .zip(self.a.iter())
-      .map(|(a, b)| crate::numerics::poly_multiplier(a, &IntPolynomial::from(b.clone())))
+      .map(|(a, b)| crate::numerics::poly_multiplier(a, b))
       .fold(TorusPolynomial::zero(n as usize), |acc, p| acc + p);
 
     let a = a_part
