@@ -63,185 +63,8 @@ where
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct IntPolynomial {
-  pub(crate) coefs: Vec<i32>,
-  pub(crate) cyclicity: Cyclicity,
-}
-
-impl IntPolynomial {
-  pub(crate) fn new(n: i32) -> Self {
-    Self {
-      coefs: vec![0; n as usize],
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-impl std::ops::Add<IntPolynomial> for IntPolynomial {
-  type Output = Self;
-  fn add(self, p: Self) -> Self {
-    assert_eq!(self.coefs.len(), p.coefs.len());
-    Self::from(
-      &self
-        .coefs
-        .iter()
-        .zip(p.coefs.iter())
-        .map(|(a, b)| a + b)
-        .collect::<Vec<_>>()[..],
-    )
-  }
-}
-
-impl std::ops::Mul<IntPolynomial> for IntPolynomial {
-  type Output = Self;
-  fn mul(self, p: Self) -> Self {
-    crate::numerics::poly_multiplier(&self, &p).into()
-  }
-}
-
-impl Polynomial<i32> for IntPolynomial {
-  fn cyclicity(&self) -> Cyclicity {
-    self.cyclicity
-  }
-
-  fn coefs(&self) -> &[i32] {
-    &self.coefs
-  }
-
-  fn uniform(n: usize) -> Self {
-    Self::from(uniform(n))
-  }
-
-  fn with(coefs: &[i32], cyclicity: Cyclicity) -> Self {
-    Self {
-      coefs: coefs.to_vec(),
-      cyclicity,
-    }
-  }
-
-  fn zero(n: usize) -> Self {
-    Self::from(vec![0; n])
-  }
-}
-
-impl<T> From<T> for IntPolynomial
-where
-  T: AsRef<[i32]>,
-{
-  fn from(s: T) -> Self {
-    let coefs = s.as_ref();
-    Self {
-      coefs: coefs.to_vec(),
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct TorusPolynomial {
-  pub(crate) coefs: Vec<Torus32>,
-  pub(crate) cyclicity: Cyclicity,
-}
-
-impl TorusPolynomial {
-  pub(crate) fn new(n: i32) -> Self {
-    Self {
-      coefs: vec![0; n as usize],
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-impl Polynomial<Torus32> for TorusPolynomial {
-  fn coefs(&self) -> &[Torus32] {
-    &self.coefs
-  }
-
-  fn cyclicity(&self) -> Cyclicity {
-    self.cyclicity
-  }
-
-  fn uniform(n: usize) -> Self {
-    Self::from(uniform(n))
-  }
-
-  fn with(coefs: &[Torus32], cyclicity: Cyclicity) -> Self {
-    Self {
-      coefs: coefs.to_vec(),
-      cyclicity,
-    }
-  }
-
-  fn zero(n: usize) -> Self {
-    Self::from(vec![0; n])
-  }
-}
-
-impl<T> From<T> for TorusPolynomial
-where
-  T: AsRef<[i32]>,
-{
-  fn from(s: T) -> Self {
-    let coefs = s.as_ref();
-    Self {
-      coefs: coefs.to_vec(),
-      cyclicity: Cyclicity::Negacyclic,
-    }
-  }
-}
-
-impl std::ops::Add<TorusPolynomial> for TorusPolynomial {
-  type Output = Self;
-  fn add(self, p: Self) -> Self {
-    #[cfg(debug)]
-    {
-      if self.len() != p.len() {
-        println!(
-          "Adding polynomials of differing lengths!: len({}) - len({})",
-          self.len(),
-          p.len()
-        )
-      }
-    }
-
-    let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
-
-    Self::from(
-      self_copy
-        .iter()
-        .zip(p_copy.iter())
-        .map(|(a, b)| a + b)
-        .collect::<Vec<_>>(),
-    )
-  }
-}
-
-impl std::ops::Mul<TorusPolynomial> for TorusPolynomial {
-  type Output = Self;
-  fn mul(self, p: Self) -> Self {
-    crate::numerics::poly_multiplier(&self, &p)
-  }
-}
-
-impl From<IntPolynomial> for TorusPolynomial {
-  fn from(p: IntPolynomial) -> Self {
-    Self {
-      coefs: p.coefs,
-      cyclicity: p.cyclicity,
-    }
-  }
-}
-
-impl From<TorusPolynomial> for IntPolynomial {
-  fn from(p: TorusPolynomial) -> Self {
-    Self {
-      coefs: p.coefs,
-      cyclicity: p.cyclicity,
-    }
-  }
-}
-
+/// Simple function for ensuring two vectors are equal length.
+/// Pads them leftwise with `0` until they are equal.
 fn match_and_pad<T>(
   a: Vec<T>,
   b: Vec<T>,
@@ -266,29 +89,175 @@ where
   (a_copy, b_copy)
 }
 
-impl std::ops::Sub<TorusPolynomial> for TorusPolynomial {
-  type Output = Self;
-  fn sub(self, p: Self) -> Self {
-    #[cfg(debug)]
-    {
-      if self.len() != p.len() {
-        println!(
-          "Subtracting polynomials of differing lengths!: len({}) - len({})",
-          self.len(),
-          p.len()
+#[derive(Clone, Debug, PartialEq)]
+pub struct IntPolynomial {
+  pub(crate) coefs: Vec<i32>,
+  pub(crate) cyclicity: Cyclicity,
+}
+
+impl IntPolynomial {
+  pub(crate) fn new(n: i32) -> Self {
+    Self {
+      coefs: vec![0; n as usize],
+      cyclicity: Cyclicity::Negacyclic,
+    }
+  }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct TorusPolynomial {
+  pub(crate) coefs: Vec<Torus32>,
+  pub(crate) cyclicity: Cyclicity,
+}
+
+impl TorusPolynomial {
+  pub(crate) fn new(n: i32) -> Self {
+    Self {
+      coefs: vec![0; n as usize],
+      cyclicity: Cyclicity::Negacyclic,
+    }
+  }
+}
+
+macro_rules! impl_add {
+  ($name: ident) => {
+    impl std::ops::Add<$name> for $name {
+      type Output = Self;
+      fn add(self, p: Self) -> Self {
+        #[cfg(debug)]
+        {
+          if self.len() != p.len() {
+            println!(
+              "Adding polynomials of differing lengths!: len({}) - len({})",
+              self.len(),
+              p.len()
+            )
+          }
+        }
+
+        let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
+
+        Self::from(
+          self_copy
+            .iter()
+            .zip(p_copy.iter())
+            .map(|(a, b)| a + b)
+            .collect::<Vec<_>>(),
         )
       }
     }
-
-    let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
-    let vals = self_copy
-      .iter()
-      .zip(p_copy.iter())
-      .map(|(a, b)| a - b)
-      .collect::<Vec<_>>();
-    Self::from(vals)
-  }
+  };
 }
+macro_rules! impl_sub {
+  ($name: ident) => {
+    impl std::ops::Sub<$name> for $name {
+      type Output = Self;
+      fn sub(self, p: Self) -> Self {
+        #[cfg(debug)]
+        {
+          if self.len() != p.len() {
+            println!(
+              "Subtracting polynomials of differing lengths!: len({}) - len({})",
+              self.len(),
+              p.len()
+            )
+          }
+        }
+
+        let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
+        let vals = self_copy
+          .iter()
+          .zip(p_copy.iter())
+          .map(|(a, b)| a - b)
+          .collect::<Vec<_>>();
+        Self::from(vals)
+      }
+    }
+  };
+}
+
+macro_rules! impl_mul {
+  ($name: ident) => {
+    impl std::ops::Mul<$name> for $name {
+      type Output = Self;
+      fn mul(self, p: Self) -> Self {
+        crate::numerics::poly_multiplier(&self, &p).into()
+      }
+    }
+  };
+}
+
+macro_rules! impl_polynomial {
+  ($name:ident, $ty: ty) => {
+    impl Polynomial<$ty> for $name {
+      fn cyclicity(&self) -> Cyclicity {
+        self.cyclicity
+      }
+
+      fn coefs(&self) -> &[$ty] {
+        &self.coefs
+      }
+
+      fn uniform(n: usize) -> Self {
+        Self::from(uniform(n))
+      }
+
+      fn with(coefs: &[$ty], cyclicity: Cyclicity) -> Self {
+        Self {
+          coefs: coefs.to_vec(),
+          cyclicity,
+        }
+      }
+
+      fn zero(n: usize) -> Self {
+        Self::from(vec![0; n])
+      }
+    }
+  };
+}
+
+macro_rules! impl_from {
+  ($name: ident, $ty: ty) => {
+    impl<T> From<T> for $name
+    where
+      T: AsRef<[$ty]>,
+    {
+      fn from(s: T) -> Self {
+        let coefs = s.as_ref();
+        Self {
+          coefs: coefs.to_vec(),
+          cyclicity: Cyclicity::Negacyclic,
+        }
+      }
+    }
+  };
+}
+
+macro_rules! impl_from_poly {
+  ($name: ident, $ty: ty) => {
+    impl From<$ty> for $name {
+      fn from(p: $ty) -> Self {
+        Self {
+          coefs: p.coefs,
+          cyclicity: p.cyclicity,
+        }
+      }
+    }
+  };
+}
+
+impl_add!(IntPolynomial);
+impl_add!(TorusPolynomial);
+impl_sub!(IntPolynomial);
+impl_sub!(TorusPolynomial);
+impl_mul!(IntPolynomial);
+impl_mul!(TorusPolynomial);
+impl_from!(IntPolynomial, i32);
+impl_from!(TorusPolynomial, i32);
+impl_from_poly!(TorusPolynomial, IntPolynomial);
+impl_from_poly!(IntPolynomial, TorusPolynomial);
+impl_polynomial!(IntPolynomial, i32);
+impl_polynomial!(TorusPolynomial, i32);
 
 fn uniform(n: usize) -> Vec<i32> {
   let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
