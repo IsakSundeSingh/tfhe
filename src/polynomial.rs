@@ -259,6 +259,7 @@ impl_from_poly!(IntPolynomial, TorusPolynomial);
 impl_polynomial!(IntPolynomial, i32);
 impl_polynomial!(TorusPolynomial, i32);
 
+/// Simply generates a vector of length `n` with uniform distribution
 fn uniform(n: usize) -> Vec<i32> {
   let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
   let mut rng = rand::thread_rng();

@@ -234,7 +234,7 @@ pub fn boots_xnor(
 }
 
 /** bootstrapped Not Gate: result = not(a) */
-pub fn boots_not(ca: &LweSample, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_not(ca: &LweSample, _bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   !ca.clone()
 }
 

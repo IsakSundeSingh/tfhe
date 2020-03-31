@@ -301,7 +301,6 @@ impl LweKey {
  * This function computes the phase of sample by using key : phi = b - a.s
  */
 pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
-  let n = key.params.n;
   let a: &Vec<Torus32> = &sample.coefficients;
   let k = &key.key;
 
@@ -367,7 +366,6 @@ impl LweBootstrappingKey {
     let accum_params = &tgsw_params.tlwe_params;
     let extract_params = &accum_params.extracted_lweparams;
     let n = in_out_params.n;
-    let big_n = extract_params.n;
 
     let bk: Vec<TGswSample> = vec![TGswSample::new(&tgsw_params); n as usize];
     let ks = LweKeySwitchKey::new(n, *ks_t, *ks_base_bit, in_out_params);
@@ -536,7 +534,6 @@ pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSamp
   lwe_key_switch_translate_from_array(
     &mut r,
     &ks.ks,
-    &ks.out_params,
     &sample.coefficients,
     ks.n,
     ks.t,
@@ -557,7 +554,6 @@ pub(crate) fn lwe_key_switch(ks: &LweKeySwitchKey, sample: LweSample) -> LweSamp
 fn lwe_key_switch_translate_from_array(
   result: &mut LweSample,
   #[allow(clippy::ptr_arg)] ks: &[Vec<Vec<LweSample>>],
-  params: &LweParams,
   ai: &[Torus32],
   n: i32,
   t: i32,
@@ -779,15 +775,7 @@ mod tests {
     let mut res = LweSample::trivial(b, &params);
     let mut barphi: Torus32 = b;
     for i in 0..n as usize {
-      lwe_key_switch_translate_from_array(
-        &mut res,
-        &key.ks[i..],
-        &params,
-        &ai[i..],
-        1,
-        t,
-        base_bit,
-      );
+      lwe_key_switch_translate_from_array(&mut res, &key.ks[i..], &ai[i..], 1, t, base_bit);
 
       // Overflowed here, using wrapping sub to imitate C++ behavior
       barphi = barphi.wrapping_sub((aibar[i] as i32) * in_key[i]);
@@ -807,7 +795,7 @@ mod tests {
 
     // Now, test it all at once
     res = LweSample::trivial(b, &params);
-    lwe_key_switch_translate_from_array(&mut res, &key.ks, &params, &ai, n, t, base_bit);
+    lwe_key_switch_translate_from_array(&mut res, &key.ks, &ai, n, t, base_bit);
     assert!(res.current_variance <= alpha * alpha * (n as f64) * (t as f64) + 1e-10);
     // FIXME: Uncommenting the following line fails... Why?
     // assert_eq!(barphi, res.b);

@@ -120,7 +120,6 @@ impl TGswSample {
 
   pub(crate) fn encrypt_zero(&mut self, alpha: f64, key: &TGswKey) {
     let rl_key = &key.tlwe_key;
-    let kpl = key.params.kpl;
 
     self.all_sample[0]
       .iter_mut()
@@ -131,13 +130,10 @@ impl TGswSample {
   }
 
   pub(crate) fn add_mu_int_h(&mut self, message: i32, params: &TGswParams) {
-    let k = params.tlwe_params.k;
-    let l = params.l;
     let h = &params.h;
 
     // TFHE comment: Compute self += H
     // My comment:   Compute self += H * message (ish)
-    let hs: Vec<i32> = h.iter().map(|x| message * x).collect();
     self.all_sample = self
       .all_sample
       .iter()
@@ -153,15 +149,13 @@ impl TGswSample {
                   .coefs
                   .iter()
                   .enumerate()
-                  .map(
-                    |(coef_idx, coef): (usize, &i32)| {
-                      if coef_idx == 0 {
-                        coef + h[i]
-                      } else {
-                        *coef
-                      }
-                    },
-                  )
+                  .map(|(coef_idx, coef): (usize, &i32)| {
+                    if coef_idx == 0 {
+                      coef + h[i] // TODO: Figure out if this part should be added: * message
+                    } else {
+                      *coef
+                    }
+                  })
                   .collect::<Vec<Torus32>>();
                 TorusPolynomial::from(new_coefs)
               })
@@ -201,7 +195,6 @@ impl TGswSample {
   #[allow(clippy::needless_range_loop)]
   pub(crate) fn add_mu_h(&mut self, message: &IntPolynomial, params: &TGswParams) {
     let k = params.tlwe_params.k;
-    let n = params.tlwe_params.n;
     let l = params.l;
     let h = &params.h;
     let mu = &message.coefs;
@@ -242,11 +235,6 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
   params: &TGswParams,
 ) -> TLweSample {
   let par = &params.tlwe_params;
-  let n = par.n;
-  let kpl = params.kpl;
-
-  // TODO: improve this new/delete
-  //   IntPolynomial *dec = new_IntPolynomial_array(kpl, N);
 
   let dec = tgsw_tlwe_decomposition_h(accum, params);
   let mut result = TLweSample {
@@ -282,7 +270,6 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
 fn tgsw_tlwe_decomposition_h(sample: &TLweSample, params: &TGswParams) -> Vec<Vec<IntPolynomial>> {
   let tlwe_params = &params.tlwe_params;
   let k = tlwe_params.k;
-  let l = params.l;
   let mut result =
     vec![vec![IntPolynomial::new(tlwe_params.n); params.l as usize]; (tlwe_params.k + 1) as usize];
 
