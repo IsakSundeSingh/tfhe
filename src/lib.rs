@@ -4,6 +4,7 @@
   unused_imports,
   clippy::needless_range_loop
 )]
+#![forbid(unsafe_code)]
 
 pub mod bootstrap_internals;
 pub mod bootstrapping;
