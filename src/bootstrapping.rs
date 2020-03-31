@@ -1,12 +1,16 @@
-use crate::bootstrap_internals::tfhe_bootstrap;
-use crate::lwe::{
-  LweBootstrappingKey, LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
-  TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
+use crate::{
+  lwe::{
+    LweBootstrappingKey, LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
+    TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
+  },
+  numerics::{mod_switch_to_torus32, Torus32},
+  tgsw::{TGswKey, TGswParams},
+  tlwe::TLweParameters,
 };
-use crate::tgsw::{TGswKey, TGswParams};
-use crate::tlwe::TLweParameters;
 
-use crate::numerics::{mod_switch_to_torus32, Torus32};
+#[cfg(feature = "bootstrapping")]
+use crate::bootstrap_internals::tfhe_bootstrap;
+
 //////////////////////////////////////////
 // Gate bootstrapping public interface
 //////////////////////////////////////////

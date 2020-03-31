@@ -228,21 +228,6 @@ impl std::ops::Sub<TLweSample> for TLweSample {
   }
 }
 
-/// TODO: Remove this as it is ugly
-pub(crate) fn tlwe_add_to(res: &mut TLweSample, sample: &TLweSample) {
-  *res = TLweSample {
-    a: res
-      .a
-      .iter()
-      .zip(sample.a.iter())
-      // TODO: Fix inefficient memory allocations (clone)
-      .map(|(a, b): (&TorusPolynomial, &TorusPolynomial)| a.clone() + b.clone())
-      .collect(),
-    current_variance: res.current_variance + sample.current_variance,
-    k: res.k,
-  }
-}
-
 pub(crate) fn mul_by_monomial(x: TLweSample, shift: i32) -> TLweSample {
   TLweSample {
     a: x

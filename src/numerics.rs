@@ -1,5 +1,4 @@
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
-use crate::tlwe::TLweSample;
 
 /// Idea:
 /// we may want to represent an element x of the real torus by

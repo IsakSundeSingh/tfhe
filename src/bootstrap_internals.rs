@@ -1,8 +1,10 @@
-use crate::lwe::{lwe_key_switch, LweBootstrappingKey, LweSample};
-use crate::numerics::{mod_switch_to_torus32, torus_polynomial_mul_by_xai, Modulo, Torus32};
-use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
-use crate::tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample};
-use crate::tlwe::{tlwe_add_to, tlwe_mul_by_xai_minus_one, TLweSample};
+use crate::{
+  lwe::{lwe_key_switch, LweBootstrappingKey, LweSample},
+  numerics::{Modulo, Torus32},
+  polynomial::{IntPolynomial, Polynomial, TorusPolynomial},
+  tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample},
+  tlwe::TLweSample,
+};
 
 /// # Arguments
 /// * `bk` - The bootstrapping + keyswitch key
@@ -132,16 +134,9 @@ fn tfhe_mux_rotate(
   barai: i32,
   bk_params: &TGswParams,
 ) -> TLweSample {
-  // ACC = BKi*[(X^barai-1)*ACC]+ACC
-  // temp = (X^barai-1)*ACC
+  // accum + BK_i * [(X^bar{a}_i-1) * accum]
   let temp = crate::tlwe::mul_by_monomial(result.clone() + accum.clone(), barai) - accum.clone();
   accum.clone() + tgsw_extern_mul_to_tlwe(&temp, bki, bk_params)
-  // let res = tlwe_mul_by_xai_minus_one(result, barai, accum, &bk_params.tlwe_params);
-  // // temp *= BKi
-  // let res = tgsw_extern_mul_to_tlwe(&res, bki, bk_params);
-  // res + accum.clone()
-  // ACC += temp
-  // tlwe_add_to(result, accum);
 }
 
 #[cfg(test)]
