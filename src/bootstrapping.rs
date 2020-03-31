@@ -108,7 +108,14 @@ pub fn boots_nand(
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
-  tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result - ca.clone() - cb.clone()
+  }
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
@@ -126,7 +133,14 @@ pub fn boots_or(
 
   let temp_result = LweSample::trivial(OR, in_out_params);
 
-  tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result + ca.clone() + cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
@@ -147,7 +161,14 @@ pub fn boots_and(
 
   // Compute: (0,-1/8) + ca + cb
   let temp_result = LweSample::trivial(AND, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result + ca.clone() + cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
@@ -168,7 +189,14 @@ pub fn boots_xor(
 
   // Compute: (0,1/4) + 2*(ca + cb)
   let temp_result = LweSample::trivial(XOR, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result + 2 * ca.clone() + 2 * cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result + 2 * ca.clone() + 2 * cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result + 2 * ca.clone() + 2 * cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
@@ -190,12 +218,18 @@ pub fn boots_xnor(
 
   // Compute: (0,-1/4) + 2*(-ca-cb)
   let temp_result = LweSample::trivial(XNOR, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result - 2 * ca.clone() - 2 * cb.clone())
-
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result - 2 * ca.clone() - 2 * cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result - 2 * ca.clone() - 2 * cb.clone()
+  }
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap(&bk.bk, mu, temp)
+  // {tfhe_bootstrap(&bk.bk, mu, temp)}
   // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
@@ -217,8 +251,14 @@ pub fn boots_nor(
 
   // Compute: (0,-1/8) - ca - cb
   let temp_result = LweSample::trivial(NOR, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
-
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result - ca.clone() - cb.clone()
+  }
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
@@ -237,8 +277,14 @@ pub fn boots_andny(
   // Compute: (0,-1/8) - ca + cb
   const ANDNY: Torus32 = mod_switch_to_torus32(-1, 8);
   let temp_result = LweSample::trivial(ANDNY, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
-
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result - ca.clone() + cb.clone()
+  }
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
   // TODO: Actually implement the bootstrapping so gates can be chained!
@@ -258,7 +304,14 @@ pub fn boots_andyn(
 
   // Compute: (0,-1/8) + ca - cb
   let temp_result = LweSample::trivial(ANDYN, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result + ca.clone() - cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
@@ -279,7 +332,14 @@ pub fn boots_orny(
 
   // Compute: (0,1/8) - ca + cb
   let temp_result = LweSample::trivial(ORNY, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result - ca.clone() + cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8
@@ -300,7 +360,14 @@ pub fn boots_oryn(
 
   // Compute: (0,1/8) + ca - cb
   let temp_result = LweSample::trivial(ORYN, in_out_params);
-  tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+  #[cfg(feature = "bootstrapping")]
+  {
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+  }
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    temp_result + ca.clone() - cb.clone()
+  }
 
   // If the phase is positive, the result is 1/8,
   // otherwise the result is -1/8

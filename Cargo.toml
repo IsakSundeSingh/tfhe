@@ -18,6 +18,7 @@ criterion = "0.3.1"
 
 [features]
 fft = [ "rustfft" ]
+bootstrapping = []
 
 default = [ "fft" ]
 
