@@ -105,9 +105,29 @@ pub(crate) fn mod_switch_from_torus32(phase: Torus32, message_size: i32) -> i32 
   (phase64 / interval) as i32
 }
 
+/// Returns the phase of the message in the half-open range `[- message_space / 2, message_space / 2)`
+/// in a space with `message_space` possible elements.
+/// # Note
+/// The `message_space` must be a power of 2.
+pub(crate) const fn encode_message(mu: i32, message_space: i32) -> Torus32 {
+  let log2 = message_space.trailing_zeros();
+  mu << (32 - log2)
+}
+
+/// Approximates the phase to the nearest possible message in the message space `[- message_space / 2, message_space / 2)`
+/// in a space with `message_space` possible elements.
+/// # Panics
+/// Panics if the `message_space` isn't a power of 2.
 pub(crate) fn decode_message(phase: Torus32, message_space: i32) -> i32 {
-  let log2_ms = message_space.trailing_zeros();
-  (phase.wrapping_add(1 << (32 - log2_ms - 1))) >> (32 - log2_ms)
+  assert!(is_power_of_2(message_space as usize));
+  let log2 = message_space.trailing_zeros();
+  (phase.wrapping_add(1 << (32 - log2 - 1))) >> (32 - log2)
+}
+
+/// Pretty self-descriptive
+#[inline]
+fn is_power_of_2(x: usize) -> bool {
+  (x & (x - 1)) == 0
 }
 
 pub(crate) fn torus_polynomial_mul_r(
@@ -127,7 +147,8 @@ pub(crate) fn torus_polynomial_mul_r(
 
 /// Multiplies two polynomials
 ///
-/// **Warning**: Inefficient -> O(n²)
+/// ## Warning
+/// Inefficient -> O(n²)
 #[cfg(not(feature = "fft"))]
 pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial
 where
@@ -159,10 +180,6 @@ where
   P2: Polynomial<i32>,
 {
   // Algorithm found at https://math.stackexchange.com/questions/764727/concrete-fft-polynomial-multiplication-example
-
-  fn is_power_of_2(x: usize) -> bool {
-    (x & (x - 1)) == 0
-  }
   use num_traits::Zero;
   use rustfft::num_complex::Complex;
   use rustfft::FFTplanner;
@@ -170,7 +187,6 @@ where
   assert_eq!(a.len(), a.len());
 
   let degree = a.len() + b.len() - 2;
-  // Optionally pad these to a power of 2 length for a more optimal FFT
   let mut p: Vec<_> = a
     .coefs()
     .iter()
@@ -179,6 +195,7 @@ where
     .chain(std::iter::repeat(0f64).take(b.len() - 1))
     .map(|x| Complex::new(x, 0f64))
     .collect();
+
   if !is_power_of_2(p.len()) {
     let mut power = 1;
     while power < p.len() {
@@ -190,6 +207,7 @@ where
         .collect::<Vec<Complex<f64>>>(),
     );
   }
+
   let mut q: Vec<Complex<f64>> = b
     .coefs()
     .iter()
@@ -198,6 +216,7 @@ where
     .chain(std::iter::repeat(0f64).take(a.len() - 1))
     .map(|x| Complex::new(x, 0f64))
     .collect();
+
   if !is_power_of_2(q.len()) {
     let mut power = 1;
     while power < q.len() {
@@ -226,9 +245,11 @@ where
     .collect();
 
   let mut res = vec![num_traits::identities::Zero::zero(); r.len()];
+
   // Create a FFT planner for the inverse FFT
   let fft = FFTplanner::new(true).plan_fft(r.len());
   fft.process(&mut r, &mut res);
+
   let coefs: Vec<i32> = res
     .into_iter()
     .take(degree + 1)
@@ -308,18 +329,17 @@ pub(crate) fn torus_polynomial_mul_by_xai_minus_one(
   TorusPolynomial::from(coefs)
 }
 
-/// This function return the absolute value of the (centered) fractional part of `d`
-/// i.e. the distance between `d` and its nearest integer
-#[cfg(test)]
-pub(crate) fn abs_frac(d: f64) -> f64 {
-  (d - d.round()).abs()
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::polynomial::Polynomial;
   use rand::distributions::Distribution;
+
+  /// This function return the absolute value of the (centered) fractional part of `d`
+  /// i.e. the distance between `d` and its nearest integer
+  pub(crate) fn abs_frac(d: f64) -> f64 {
+    (d - d.round()).abs()
+  }
 
   /// Unsure what this does, but it works
   fn anticyclic_get(tab: &[i32], a: i32, n: i32) -> i32 {
