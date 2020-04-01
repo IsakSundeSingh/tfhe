@@ -3,7 +3,7 @@ use crate::{
     LweBootstrappingKey, LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
     TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
   },
-  numerics::{mod_switch_to_torus32, Torus32},
+  numerics::{encode_message, Torus32},
   tgsw::{TGswKey, TGswParams},
   tlwe::TLweParameters,
 };
@@ -71,7 +71,7 @@ pub fn new_gate_bootstrapping_ciphertext_array(
 
 /** encrypts a boolean */
 pub fn boots_sym_encrypt(message: bool, key: &TFheGateBootstrappingSecretKeySet) -> LweSample {
-  const _1S8: Torus32 = crate::numerics::mod_switch_to_torus32(1, 8);
+  const _1S8: Torus32 = encode_message(1, 8);
   let mu: Torus32 = if message { _1S8 } else { -_1S8 };
   let alpha = key.params.in_out_params.alpha_min;
   let mut sample = LweSample::new(&key.params.in_out_params);
@@ -88,7 +88,7 @@ pub fn boots_sym_decrypt(sample: &LweSample, key: &TFheGateBootstrappingSecretKe
 /** bootstrapped Constant (true or false) trivial Gate */
 pub fn boots_constant(value: bool, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   LweSample {
     coefficients: vec![0; in_out_params.n as usize],
     b: if value { MU } else { -MU },
@@ -102,11 +102,11 @@ pub fn boots_nand(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,1/8) - ca - cb
-  const NAND: Torus32 = mod_switch_to_torus32(1, 8);
+  const NAND: Torus32 = encode_message(1, 8);
   let temp_result = LweSample::trivial(NAND, in_out_params);
 
   // If the phase is positive, the result is 1/8,
@@ -129,11 +129,11 @@ pub fn boots_or(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,1/8) + ca + cb
-  const OR: Torus32 = mod_switch_to_torus32(1, 8);
+  const OR: Torus32 = encode_message(1, 8);
 
   let temp_result = LweSample::trivial(OR, in_out_params);
 
@@ -158,10 +158,10 @@ pub fn boots_and(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const AND: Torus32 = mod_switch_to_torus32(-1, 8);
+  const AND: Torus32 = encode_message(-1, 8);
 
   // Compute: (0,-1/8) + ca + cb
   let temp_result = LweSample::trivial(AND, in_out_params);
@@ -186,10 +186,10 @@ pub fn boots_xor(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const XOR: Torus32 = mod_switch_to_torus32(1, 4);
+  const XOR: Torus32 = encode_message(1, 4);
 
   // Compute: (0,1/4) + 2*(ca + cb)
   let temp_result = LweSample::trivial(XOR, in_out_params);
@@ -215,10 +215,10 @@ pub fn boots_xnor(
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
   // use crate::bootstrap_internals::tfhe_bootstrap;
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const XNOR: Torus32 = mod_switch_to_torus32(-1, 4);
+  const XNOR: Torus32 = encode_message(-1, 4);
 
   // Compute: (0,-1/4) + 2*(-ca-cb)
   let temp_result = LweSample::trivial(XNOR, in_out_params);
@@ -248,10 +248,10 @@ pub fn boots_nor(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(-1, 8);
+  const MU: Torus32 = encode_message(-1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const NOR: Torus32 = mod_switch_to_torus32(-1, 8);
+  const NOR: Torus32 = encode_message(-1, 8);
 
   // Compute: (0,-1/8) - ca - cb
   let temp_result = LweSample::trivial(NOR, in_out_params);
@@ -275,11 +275,11 @@ pub fn boots_andny(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,-1/8) - ca + cb
-  const ANDNY: Torus32 = mod_switch_to_torus32(-1, 8);
+  const ANDNY: Torus32 = encode_message(-1, 8);
   let temp_result = LweSample::trivial(ANDNY, in_out_params);
   #[cfg(feature = "bootstrapping")]
   {
@@ -301,10 +301,10 @@ pub fn boots_andyn(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const ANDYN: Torus32 = mod_switch_to_torus32(-1, 8);
+  const ANDYN: Torus32 = encode_message(-1, 8);
 
   // Compute: (0,-1/8) + ca - cb
   let temp_result = LweSample::trivial(ANDYN, in_out_params);
@@ -329,10 +329,10 @@ pub fn boots_orny(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const ORNY: Torus32 = mod_switch_to_torus32(1, 8);
+  const ORNY: Torus32 = encode_message(1, 8);
 
   // Compute: (0,1/8) - ca + cb
   let temp_result = LweSample::trivial(ORNY, in_out_params);
@@ -357,10 +357,10 @@ pub fn boots_oryn(
   cb: &LweSample,
   bk: &TFHEGateBootstrappingCloudKeySet,
 ) -> LweSample {
-  const MU: Torus32 = mod_switch_to_torus32(1, 8);
+  const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
-  const ORYN: Torus32 = mod_switch_to_torus32(1, 8);
+  const ORYN: Torus32 = encode_message(1, 8);
 
   // Compute: (0,1/8) + ca - cb
   let temp_result = LweSample::trivial(ORYN, in_out_params);
