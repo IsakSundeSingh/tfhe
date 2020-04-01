@@ -9,6 +9,9 @@ use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 /// natural at all.
 pub type Torus32 = i32;
 
+/// 2 ^ 32
+const TWO_32: f64 = 4_294_967_296f64;
+
 pub(crate) trait Modulo<RHS = Self> {
   type Output;
   fn modulo(&self, rhs: RHS) -> Self::Output;
@@ -42,17 +45,10 @@ pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
 /// # Warning
 /// Weird and lossy conversion
 pub(crate) fn f64_to_torus_32(d: f64) -> Torus32 {
-  // 2 ^ 32
-  const TWO_32: i64 = 4_294_967_296;
-  let inner = d - ((d as i64) as f64);
-  let x = (inner * TWO_32 as f64) as i64;
-  x as Torus32
-  // C++ conversion: // return int32_t(int64_t((d - int64_t(d))*_two32));
+  (d * TWO_32).trunc() as Torus32
 }
 
 pub(crate) fn torus_32_to_f64(x: Torus32) -> f64 {
-  // 2 ^ 32
-  const TWO_32: f64 = 4_294_967_296.0;
   (x as f64) / TWO_32
 }
 
@@ -148,7 +144,7 @@ pub(crate) fn torus_polynomial_mul_r(
 /// Multiplies two polynomials
 ///
 /// ## Warning
-/// Inefficient -> O(n²)
+/// Inefficient -> `O(n<sup>2</sup>)`
 #[cfg(not(feature = "fft"))]
 pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial
 where
@@ -171,7 +167,7 @@ where
 
 /// Multiplies two polynomials using FFT
 ///
-/// Efficient -> O(nlogn)
+/// Efficient -> `O(n log n)`
 #[cfg(feature = "fft")]
 #[allow(clippy::many_single_char_names)]
 pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial

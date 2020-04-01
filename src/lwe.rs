@@ -154,6 +154,38 @@ impl Parameters {
   }
 }
 
+impl Default for Parameters {
+  /// Returns the standard security level of around 128 bits
+  fn default() -> Self {
+    const N: i32 = 1024;
+    const K: i32 = 1;
+    const LOWERCASE_N: i32 = 500;
+    const BK_L: i32 = 2;
+    const BK_BG_BIT: i32 = 10;
+    const KS_BASE_BIT: i32 = 2;
+    const KS_LENGTH: i32 = 8;
+
+    // Standard deviation
+    const KS_STDEV: f64 = 2.44e-5;
+
+    // Standard deviation
+    const BK_STDEV: f64 = 7.18e-9;
+
+    // Max standard deviation for a 1/4 msg space
+    const MAX_STDEV: f64 = 0.012_467;
+
+    let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
+    let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
+    let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
+    Self {
+      ks_t: KS_LENGTH,
+      ks_base_bit: KS_BASE_BIT,
+      in_out_params: params_in,
+      tgsw_params: params_bk,
+    }
+  }
+}
+
 pub struct CloudKey {
   pub(crate) params: Parameters,
   pub(crate) bk: LweBootstrappingKey,

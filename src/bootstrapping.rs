@@ -1,8 +1,7 @@
 use crate::{
-  lwe::{CloudKey, LweBootstrappingKey, LweKey, LweParams, LweSample, Parameters, SecretKey},
+  lwe::{CloudKey, LweBootstrappingKey, LweKey, LweSample, Parameters, SecretKey},
   numerics::{encode_message, Torus32},
-  tgsw::{TGswKey, TGswParams},
-  tlwe::TLweParameters,
+  tgsw::TGswKey,
 };
 
 #[cfg(feature = "bootstrapping")]
@@ -14,29 +13,7 @@ pub fn bootstrapping_parameters(minimum_lambda: i32) -> Parameters {
   if minimum_lambda > 128 {
     panic!("Sorry, for now, the parameters are only implemented for about 128bit of security!");
   }
-
-  const N: i32 = 1024;
-  const K: i32 = 1;
-  const LOWERCASE_N: i32 = 500;
-  const BK_L: i32 = 2;
-  const BK_BG_BIT: i32 = 10;
-  const KS_BASE_BIT: i32 = 2;
-  const KS_LENGTH: i32 = 8;
-
-  // Standard deviation
-  const KS_STDEV: f64 = 2.44e-5;
-
-  // Standard deviation
-  const BK_STDEV: f64 = 7.18e-9;
-
-  // Max standard deviation for a 1/4 msg space
-  const MAX_STDEV: f64 = 0.012_467;
-
-  let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
-  let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
-  let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
-
-  Parameters::new(KS_LENGTH, KS_BASE_BIT, params_in, params_bk)
+  Parameters::default()
 }
 
 /// Generate a keypair
@@ -45,7 +22,8 @@ pub fn bootstrapping_parameters(minimum_lambda: i32) -> Parameters {
 ///
 /// ```rust
 /// # use tfhe::bootstrapping::{generate_keys, bootstrapping_parameters};
-/// # let params = bootstrapping_parameters(128);
+/// # use tfhe::lwe::Parameters;
+/// let params = Parameters::default();
 /// let (secret_key, cloud_key) = generate_keys(&params);
 /// ```
 pub fn generate_keys(params: &Parameters) -> (SecretKey, CloudKey) {
