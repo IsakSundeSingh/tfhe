@@ -151,18 +151,22 @@ where
   P1: Polynomial<i32>,
   P2: Polynomial<i32>,
 {
-  assert_eq!(a.len(), b.len());
-
+  let (a_coefs, b_coefs) = crate::polynomial::match_and_pad(a.coefs().to_vec(), b.coefs().to_vec());
   let degree = a.len() + b.len() - 2;
-  let mut coefs = vec![0; degree + 1];
+  let mut coefs = vec![0; a_coefs.len() + b_coefs.len() + 1];
 
   for i in 0..a.coefs().len() {
     for j in 0..b.coefs().len() {
-      coefs[i + j] = coefs[i + j] + a.coefs()[i] * b.coefs()[j];
+      coefs[i + j] = coefs[i + j] + a_coefs[i] * b_coefs[j];
     }
   }
 
-  TorusPolynomial::from(coefs)
+  TorusPolynomial::from(
+    coefs
+      .into_iter()
+      .skip(a_coefs.len() - degree)
+      .collect::<Vec<i32>>(),
+  )
 }
 
 /// Multiplies two polynomials using FFT

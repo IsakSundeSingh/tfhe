@@ -180,16 +180,16 @@ impl TLweSample {
     let mut l = LweSample::new(params);
 
     for i in 0..k {
-      l.coefficients[(i * n) as usize] = self.a[i as usize].coefs()[0];
+      l.coefficients[(i * n) as usize] = self.a[i as usize][0];
       for j in 1..n {
         // l->a[i*N+j] = -x->a[i].coefsT[N+0-j];
-        l.coefficients[(i * n + j) as usize] = -self.a[i as usize].coefs()[(n - j) as usize];
+        l.coefficients[(i * n + j) as usize] = -self.a[i as usize][(n - j) as usize];
       }
     }
 
     match self.a.len() {
       0 => panic!("Cannot get last element of a, as it is empty!"),
-      n => l.b = self.a[n - 1].coefs()[0],
+      n => l.b = self.a[n - 1][0],
     }
     l
   }

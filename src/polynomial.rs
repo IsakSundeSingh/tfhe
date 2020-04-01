@@ -11,7 +11,8 @@ pub(crate) enum Cyclicity {
   Cyclic,
 }
 
-pub(crate) trait Polynomial<T>: std::ops::Add<Self> + std::ops::Mul<Self>
+pub(crate) trait Polynomial<T>:
+  std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize>
 where
   Self: Sized,
 {
@@ -67,7 +68,7 @@ where
 
 /// Simple function for ensuring two vectors are equal length.
 /// Pads them leftwise with `0` until they are equal.
-fn match_and_pad<T>(
+pub(crate) fn match_and_pad<T>(
   a: Vec<T>,
   b: Vec<T>,
 ) -> (std::collections::VecDeque<T>, std::collections::VecDeque<T>)
@@ -255,6 +256,18 @@ macro_rules! impl_from_poly {
   };
 }
 
+macro_rules! impl_index {
+  ($name: ident, $ty: ty) => {
+    impl std::ops::Index<usize> for $name {
+      type Output = $ty;
+      #[inline]
+      fn index(&self, idx: usize) -> &$ty {
+        &self.coefs[idx]
+      }
+    }
+  };
+}
+
 impl_add!(IntPolynomial);
 impl_add!(TorusPolynomial);
 impl_sub!(IntPolynomial);
@@ -265,6 +278,8 @@ impl_from!(IntPolynomial, i32);
 impl_from!(TorusPolynomial, i32);
 impl_from_poly!(TorusPolynomial, IntPolynomial);
 impl_from_poly!(IntPolynomial, TorusPolynomial);
+impl_index!(IntPolynomial, i32);
+impl_index!(TorusPolynomial, i32);
 impl_polynomial!(IntPolynomial, i32);
 impl_polynomial!(TorusPolynomial, i32);
 
@@ -295,17 +310,17 @@ pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
 
   for j in 0..power {
     coefs[(j.modulo(n)) as usize] = if shift_first {
-      -p.coefs()[((n - power + j).modulo(n)) as usize]
+      -p[((n - power + j).modulo(n)) as usize]
     } else {
-      p.coefs()[((n - power + j).modulo(n)) as usize]
+      p[((n - power + j).modulo(n)) as usize]
     }
   }
 
   for j in power..n {
     coefs[(j.modulo(n)) as usize] = if shift_last {
-      -p.coefs()[((j - power).modulo(n)) as usize]
+      -p[((j - power).modulo(n)) as usize]
     } else {
-      p.coefs()[((j - power).modulo(n)) as usize]
+      p[((j - power).modulo(n)) as usize]
     }
   }
   IntPolynomial::with(&coefs, p.cyclicity())
