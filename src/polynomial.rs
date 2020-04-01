@@ -196,6 +196,7 @@ macro_rules! impl_polynomial {
         self.cyclicity
       }
 
+      #[inline]
       fn coefs(&self) -> &[$ty] {
         &self.coefs
       }
