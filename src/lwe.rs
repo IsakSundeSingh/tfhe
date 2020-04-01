@@ -131,14 +131,14 @@ impl std::ops::Not for LweSample {
 }
 
 #[derive(Clone)]
-pub struct TFHEGateBootstrappingParameterSet {
+pub struct Parameters {
   pub ks_t: i32,
   pub ks_base_bit: i32,
   pub in_out_params: LweParams,
   pub tgsw_params: TGswParams,
 }
 
-impl TFHEGateBootstrappingParameterSet {
+impl Parameters {
   pub fn new(
     ks_t: i32,
     ks_base_bit: i32,
@@ -154,15 +154,15 @@ impl TFHEGateBootstrappingParameterSet {
   }
 }
 
-pub struct TFHEGateBootstrappingCloudKeySet {
-  pub(crate) params: TFHEGateBootstrappingParameterSet,
+pub struct CloudKey {
+  pub(crate) params: Parameters,
   pub(crate) bk: LweBootstrappingKey,
   // bk_fft: LweBootstrappingKeyFFT,
 }
 
-impl TFHEGateBootstrappingCloudKeySet {
+impl CloudKey {
   pub fn new(
-    params: TFHEGateBootstrappingParameterSet,
+    params: Parameters,
     bk: LweBootstrappingKey,
     // bk_fft: LweBootstrappingKeyFFT,
   ) -> Self {
@@ -170,25 +170,17 @@ impl TFHEGateBootstrappingCloudKeySet {
   }
 }
 
-pub struct TFheGateBootstrappingSecretKeySet {
-  pub(crate) params: TFHEGateBootstrappingParameterSet,
+pub struct SecretKey {
+  pub(crate) params: Parameters,
   pub(crate) lwe_key: LweKey,
   tgsw_key: TGswKey,
-  pub cloud: TFHEGateBootstrappingCloudKeySet,
 }
-impl TFheGateBootstrappingSecretKeySet {
-  pub fn new(
-    params: TFHEGateBootstrappingParameterSet,
-    bk: LweBootstrappingKey,
-    lwe_key: LweKey,
-    tgsw_key: TGswKey,
-  ) -> Self {
-    let cloud = TFHEGateBootstrappingCloudKeySet::new(params.clone(), bk);
+impl SecretKey {
+  pub fn new(params: Parameters, lwe_key: LweKey, tgsw_key: TGswKey) -> Self {
     Self {
       params,
       lwe_key,
       tgsw_key,
-      cloud,
     }
   }
 }
@@ -356,8 +348,8 @@ pub struct LweBootstrappingKey {
 }
 
 impl LweBootstrappingKey {
-  fn new(params: &TFHEGateBootstrappingParameterSet) -> Self {
-    let TFHEGateBootstrappingParameterSet {
+  fn new(params: &Parameters) -> Self {
+    let Parameters {
       ks_t,
       ks_base_bit,
       in_out_params,
@@ -381,11 +373,7 @@ impl LweBootstrappingKey {
     }
   }
 
-  pub(crate) fn create(
-    params: &TFHEGateBootstrappingParameterSet,
-    key_in: &LweKey,
-    rgsw_key: &TGswKey,
-  ) -> Self {
+  pub(crate) fn create(params: &Parameters, key_in: &LweKey, rgsw_key: &TGswKey) -> Self {
     let mut key = Self::new(&params);
     assert_eq!(key.bk_params, rgsw_key.params);
     assert_eq!(key.in_out_params, key_in.params);

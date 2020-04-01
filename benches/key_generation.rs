@@ -1,16 +1,12 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use tfhe::bootstrapping::{
-  new_default_gate_bootstrapping_parameters, new_random_gate_bootstrapping_secret_keyset,
-};
+use tfhe::bootstrapping::{bootstrapping_parameters, generate_keys};
 
 /// Benchmarks the key generation with the default parameters
 fn key_generation_benchmark(c: &mut Criterion) {
   let security = 128;
-  let params = new_default_gate_bootstrapping_parameters(security);
-  c.bench_function("Generate key", |b| {
-    b.iter(|| new_random_gate_bootstrapping_secret_keyset(&params))
-  });
+  let params = bootstrapping_parameters(security);
+  c.bench_function("Generate key", |b| b.iter(|| generate_keys(&params)));
 }
 
 criterion_group!(

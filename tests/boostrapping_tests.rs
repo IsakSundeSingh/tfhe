@@ -2,19 +2,16 @@ use tfhe::bootstrapping::{
   boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
   boots_orny, boots_oryn, boots_xnor, boots_xor,
 };
-use tfhe::bootstrapping::{
-  boots_sym_decrypt, boots_sym_encrypt, new_default_gate_bootstrapping_parameters,
-  new_random_gate_bootstrapping_secret_keyset,
-};
+use tfhe::bootstrapping::{bootstrapping_parameters, decrypt, encrypt, generate_keys};
 
 #[test]
 fn test_encrypt_decrypt_true_is_true() {
   let message = true;
   let security = 128;
-  let params = new_default_gate_bootstrapping_parameters(security);
-  let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
-  let encrypted = boots_sym_encrypt(message, &secret_key);
-  let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
+  let params = bootstrapping_parameters(security);
+  let (secret_key, _cloud_key) = generate_keys(&params);
+  let encrypted = encrypt(message, &secret_key);
+  let decrypted = decrypt(&encrypted, &secret_key);
 
   assert_eq!(message, decrypted);
 }
@@ -23,10 +20,10 @@ fn test_encrypt_decrypt_true_is_true() {
 fn test_encrypt_decrypt_false_is_false() {
   let message = false;
   let security = 128;
-  let params = new_default_gate_bootstrapping_parameters(security);
-  let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
-  let encrypted = boots_sym_encrypt(message, &secret_key);
-  let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
+  let params = bootstrapping_parameters(security);
+  let (secret_key, _cloud_key) = generate_keys(&params);
+  let encrypted = encrypt(message, &secret_key);
+  let decrypted = decrypt(&encrypted, &secret_key);
 
   assert_eq!(message, decrypted);
 }
@@ -34,14 +31,13 @@ fn test_encrypt_decrypt_false_is_false() {
 #[test]
 fn test_bootstrapping_constant() {
   let security = 128;
-  let params = new_default_gate_bootstrapping_parameters(security);
-  let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
-  let cloud_key = &secret_key.cloud;
+  let params = bootstrapping_parameters(security);
+  let (secret_key, cloud_key) = generate_keys(&params);
   let every_combo = vec![true, false];
 
   for x in every_combo {
     let bootstrapped = boots_constant(x, &cloud_key);
-    let decrypted = boots_sym_decrypt(&bootstrapped, &secret_key);
+    let decrypted = decrypt(&bootstrapped, &secret_key);
     assert_eq!(x, decrypted);
   }
 }
@@ -51,11 +47,10 @@ macro_rules! test_binary_gate {
     #[test]
     fn $test_name() {
       let security = 128;
-      let params = new_default_gate_bootstrapping_parameters(security);
-      let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
-      let cloud_key = &secret_key.cloud;
-      let enc_true = boots_sym_encrypt(true, &secret_key);
-      let enc_false = boots_sym_encrypt(false, &secret_key);
+      let params = bootstrapping_parameters(security);
+      let (secret_key, cloud_key) = generate_keys(&params);
+      let enc_true = encrypt(true, &secret_key);
+      let enc_false = encrypt(false, &secret_key);
 
       let every_combo = vec![(true, true), (true, false), (false, true), (false, false)];
 
@@ -70,7 +65,7 @@ macro_rules! test_binary_gate {
         };
 
         let encrypted = $encrypted_gate(enc_a, enc_b, &cloud_key);
-        let decrypted = boots_sym_decrypt(&encrypted, &secret_key);
+        let decrypted = decrypt(&encrypted, &secret_key);
         assert_eq!(decrypted, $binary_gate(a, b));
       }
     }
@@ -82,11 +77,10 @@ macro_rules! test_unary_gate {
     #[test]
     fn $test_name() {
       let security = 128;
-      let params = new_default_gate_bootstrapping_parameters(security);
-      let secret_key = new_random_gate_bootstrapping_secret_keyset(&params);
-      let cloud_key = &secret_key.cloud;
-      let enc_true = boots_sym_encrypt(true, &secret_key);
-      let enc_false = boots_sym_encrypt(false, &secret_key);
+      let params = bootstrapping_parameters(security);
+      let (secret_key, cloud_key) = generate_keys(&params);
+      let enc_true = encrypt(true, &secret_key);
+      let enc_false = encrypt(false, &secret_key);
 
       let every_combo = vec![true, false];
 
@@ -97,7 +91,7 @@ macro_rules! test_unary_gate {
         };
 
         let result = $encrypted_gate(encrypted, &cloud_key);
-        let decrypted = boots_sym_decrypt(&result, &secret_key);
+        let decrypted = decrypt(&result, &secret_key);
 
         assert_eq!(decrypted, $unary_gate(x));
       }

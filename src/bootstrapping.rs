@@ -1,8 +1,5 @@
 use crate::{
-  lwe::{
-    LweBootstrappingKey, LweKey, LweParams, LweSample, TFHEGateBootstrappingCloudKeySet,
-    TFHEGateBootstrappingParameterSet, TFheGateBootstrappingSecretKeySet,
-  },
+  lwe::{CloudKey, LweBootstrappingKey, LweKey, LweParams, LweSample, Parameters, SecretKey},
   numerics::{encode_message, Torus32},
   tgsw::{TGswKey, TGswParams},
   tlwe::TLweParameters,
@@ -11,13 +8,9 @@ use crate::{
 #[cfg(feature = "bootstrapping")]
 use crate::bootstrap_internals::tfhe_bootstrap;
 
-//////////////////////////////////////////
-// Gate bootstrapping public interface
-//////////////////////////////////////////
-/** generate default gate bootstrapping parameters */
-pub fn new_default_gate_bootstrapping_parameters(
-  minimum_lambda: i32,
-) -> TFHEGateBootstrappingParameterSet {
+/// Generate default gate bootstrapping parameters.
+/// `minimum_lambda` determines the minimum security level
+pub fn bootstrapping_parameters(minimum_lambda: i32) -> Parameters {
   if minimum_lambda > 128 {
     panic!("Sorry, for now, the parameters are only implemented for about 128bit of security!");
   }
@@ -43,34 +36,43 @@ pub fn new_default_gate_bootstrapping_parameters(
   let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
   let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
 
-  TFHEGateBootstrappingParameterSet::new(KS_LENGTH, KS_BASE_BIT, params_in, params_bk)
+  Parameters::new(KS_LENGTH, KS_BASE_BIT, params_in, params_bk)
 }
 
-/** generate a random gate bootstrapping secret key */
-pub fn new_random_gate_bootstrapping_secret_keyset(
-  params: &TFHEGateBootstrappingParameterSet,
-) -> TFheGateBootstrappingSecretKeySet {
+/// Generate a keypair
+/// Returns a tuple of the secret key and cloud key.
+/// # Example
+///
+/// ```rust
+/// # use tfhe::bootstrapping::{generate_keys, bootstrapping_parameters};
+/// # let params = bootstrapping_parameters(128);
+/// let (secret_key, cloud_key) = generate_keys(&params);
+/// ```
+pub fn generate_keys(params: &Parameters) -> (SecretKey, CloudKey) {
   let lwe_key: LweKey = LweKey::generate(&params.in_out_params);
   let tgsw_key = TGswKey::generate(&params.tgsw_params);
   let bk = LweBootstrappingKey::create(&params, &lwe_key, &tgsw_key);
-  TFheGateBootstrappingSecretKeySet::new(params.clone(), bk, lwe_key, tgsw_key)
+  (
+    SecretKey::new(params.clone(), lwe_key, tgsw_key),
+    CloudKey::new(params.clone(), bk),
+  )
 }
 
 /** generate a new unititialized ciphertext */
-pub fn new_gate_bootstrapping_ciphertext(params: &TFHEGateBootstrappingParameterSet) -> LweSample {
+pub fn new_gate_bootstrapping_ciphertext(params: &Parameters) -> LweSample {
   LweSample::new(&params.in_out_params)
 }
 
 /** generate a new unititialized ciphertext array of length nbelems */
 pub fn new_gate_bootstrapping_ciphertext_array(
   nbelems: i32,
-  params: &TFHEGateBootstrappingParameterSet,
+  params: &Parameters,
 ) -> Vec<LweSample> {
   vec![new_gate_bootstrapping_ciphertext(&params); nbelems as usize]
 }
 
-/** encrypts a boolean */
-pub fn boots_sym_encrypt(message: bool, key: &TFheGateBootstrappingSecretKeySet) -> LweSample {
+/// Encrypts a given message with the secret key.
+pub fn encrypt(message: bool, key: &SecretKey) -> LweSample {
   const _1S8: Torus32 = encode_message(1, 8);
   let mu: Torus32 = if message { _1S8 } else { -_1S8 };
   let alpha = key.params.in_out_params.alpha_min;
@@ -79,14 +81,13 @@ pub fn boots_sym_encrypt(message: bool, key: &TFheGateBootstrappingSecretKeySet)
   sample
 }
 
-/** decrypts a boolean */
-pub fn boots_sym_decrypt(sample: &LweSample, key: &TFheGateBootstrappingSecretKeySet) -> bool {
-  use crate::lwe::lwe_phase;
-  lwe_phase(sample, &key.lwe_key) > 0
+/// Decrypts a given sample into a boolean value using the given secret key.
+pub fn decrypt(sample: &LweSample, key: &SecretKey) -> bool {
+  crate::lwe::lwe_phase(sample, &key.lwe_key) > 0
 }
 
-/** bootstrapped Constant (true or false) trivial Gate */
-pub fn boots_constant(value: bool, bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+/// Convert some constant to an encoded form so it can be used in the homomorphic operations with the ciphertexts.///
+pub fn boots_constant(value: bool, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
   const MU: Torus32 = encode_message(1, 8);
   LweSample {
@@ -97,11 +98,7 @@ pub fn boots_constant(value: bool, bk: &TFHEGateBootstrappingCloudKeySet) -> Lwe
 }
 
 /** bootstrapped Nand Gate */
-pub fn boots_nand(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_nand(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -120,15 +117,10 @@ pub fn boots_nand(
   {
     temp_result - ca.clone() - cb.clone()
   }
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped Or Gate:  */
-pub fn boots_or(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_or(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -145,19 +137,10 @@ pub fn boots_or(
   {
     temp_result + ca.clone() + cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped And Gate: result = a and b */
-pub fn boots_and(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_and(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -173,19 +156,10 @@ pub fn boots_and(
   {
     temp_result + ca.clone() + cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped Xor Gate: result = a xor b */
-pub fn boots_xor(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_xor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -201,19 +175,10 @@ pub fn boots_xor(
   {
     temp_result + 2 * ca.clone() + 2 * cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped Xnor Gate: result = (a==b) */
-pub fn boots_xnor(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_xnor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   // use crate::bootstrap_internals::tfhe_bootstrap;
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
@@ -230,24 +195,15 @@ pub fn boots_xnor(
   {
     temp_result - 2 * ca.clone() - 2 * cb.clone()
   }
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // {tfhe_bootstrap(&bk.bk, mu, temp)}
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped Not Gate: result = not(a) */
-pub fn boots_not(ca: &LweSample, _bk: &TFHEGateBootstrappingCloudKeySet) -> LweSample {
+pub fn boots_not(ca: &LweSample, _bk: &CloudKey) -> LweSample {
   !ca.clone()
 }
 
 /** bootstrapped Nor Gate: result = not(a or b) */
-pub fn boots_nor(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_nor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(-1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -263,18 +219,10 @@ pub fn boots_nor(
   {
     temp_result - ca.clone() - cb.clone()
   }
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped AndNY Gate: not(a) and b */
-pub fn boots_andny(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_andny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -289,18 +237,10 @@ pub fn boots_andny(
   {
     temp_result - ca.clone() + cb.clone()
   }
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped AndYN Gate: a and not(b) */
-pub fn boots_andyn(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_andyn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -316,19 +256,10 @@ pub fn boots_andyn(
   {
     temp_result + ca.clone() - cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped OrNY Gate: not(a) or b */
-pub fn boots_orny(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_orny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -344,19 +275,10 @@ pub fn boots_orny(
   {
     temp_result - ca.clone() + cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped OrYN Gate: a or not(b) */
-pub fn boots_oryn(
-  ca: &LweSample,
-  cb: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   const MU: Torus32 = encode_message(1, 8);
   let in_out_params = &bk.params.in_out_params;
 
@@ -372,19 +294,9 @@ pub fn boots_oryn(
   {
     temp_result + ca.clone() - cb.clone()
   }
-
-  // If the phase is positive, the result is 1/8,
-  // otherwise the result is -1/8
-  // TODO: Actually implement the bootstrapping so gates can be chained!
-  // tfhe_bootstrap_FFT(result, bk->bkFFT, MU, temp_result);
 }
 
 /** bootstrapped Mux(a,b,c) = a?b:c */
-pub fn boots_mux(
-  a: &LweSample,
-  b: &LweSample,
-  c: &LweSample,
-  bk: &TFHEGateBootstrappingCloudKeySet,
-) -> LweSample {
+pub fn boots_mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> LweSample {
   todo!()
 }

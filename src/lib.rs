@@ -8,3 +8,4 @@ pub mod numerics;
 mod polynomial;
 pub mod tgsw;
 pub mod tlwe;
+pub use bootstrapping::*;
