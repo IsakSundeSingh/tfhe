@@ -182,7 +182,6 @@ where
 
   let degree = a.len() + b.len() - 2;
   let mut p: Vec<_> = a
-    .coefs()
     .iter()
     .rev()
     .map(|x| f64::from(*x))
@@ -201,7 +200,6 @@ where
   }
 
   let mut q: Vec<Complex<f64>> = b
-    .coefs()
     .iter()
     .rev()
     .map(|x| f64::from(*x))

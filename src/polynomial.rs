@@ -23,6 +23,8 @@ where
   /// and the coefficient of the term with degree 0 is the last element.
   fn coefs(&self) -> &[T];
 
+  fn iter(&self) -> std::slice::Iter<T>;
+
   /// Determines the polynomial modulus' cyclicity.
   fn cyclicity(&self) -> Cyclicity;
 
@@ -51,7 +53,7 @@ where
     f64: From<<T as std::ops::Mul>::Output>,
     T: PrimInt,
   {
-    self.coefs().iter().map(|&c| f64::from(c * c)).sum::<f64>()
+    self.iter().map(|&c| f64::from(c * c)).sum::<f64>()
   }
 
   /// Determines whether a polynomial is zero.
@@ -59,7 +61,7 @@ where
   where
     T: Zero + PartialEq,
   {
-    self.coefs().iter().all(|c| *c == Zero::zero())
+    self.iter().all(|c| *c == Zero::zero())
   }
 }
 
@@ -199,6 +201,10 @@ macro_rules! impl_polynomial {
       #[inline]
       fn coefs(&self) -> &[$ty] {
         &self.coefs
+      }
+
+      fn iter(&self) -> std::slice::Iter<$ty> {
+        self.coefs.iter()
       }
 
       fn uniform(n: usize) -> Self {
