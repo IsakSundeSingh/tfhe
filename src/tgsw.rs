@@ -151,7 +151,7 @@ impl TGswSample {
                   .enumerate()
                   .map(|(coef_idx, coef): (usize, &i32)| {
                     if coef_idx == 0 {
-                      coef + h[i] // TODO: Figure out if this part should be added: * message
+                      coef + message * h[i]
                     } else {
                       *coef
                     }
