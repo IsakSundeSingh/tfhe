@@ -186,9 +186,10 @@ impl Default for Parameters {
   }
 }
 
+#[derive(Clone)]
 pub struct CloudKey {
   pub(crate) params: Parameters,
-  pub(crate) bk: LweBootstrappingKey,
+  pub bk: LweBootstrappingKey,
   // bk_fft: LweBootstrappingKeyFFT,
 }
 
@@ -364,6 +365,7 @@ impl LweParams {
   }
 }
 
+#[derive(Clone)]
 pub struct LweBootstrappingKey {
   /// paramètre de l'input et de l'output. key: s
   pub(crate) in_out_params: LweParams,
@@ -441,6 +443,7 @@ pub struct LweBootstrappingKeyFFT {
   pub(crate) ks: LweKeySwitchKey,
 }
 
+#[derive(Clone)]
 pub struct LweKeySwitchKey {
   /// length of the input key: s'
   n: i32,

@@ -11,7 +11,7 @@ use crate::{
 /// * `mu` - The output message (if phase(x)>0)
 /// * `x` - The input sample
 /// returns = LWE(mu) iff phase(x)>0, LWE(-mu) iff phase(x)<0
-pub(crate) fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: LweSample) -> LweSample {
+pub fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: LweSample) -> LweSample {
   let res = tfhe_bootstrap_without_key_switching(bk, mu, x);
   // Key Switching
   lwe_key_switch(&bk.ks, res)
@@ -75,7 +75,6 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
   let extract_params = &accum_params.extracted_lweparams;
   let big_n = accum_params.n;
   let _2n = 2 * v.len() as i32;
-  println!("big_n {}, v.n {}, barb: {}", big_n, v.len(), barb);
 
   let test_vec_bis = if barb != 0 {
     // `_2n - barb` should be equivalent to `-barb mod _2n`

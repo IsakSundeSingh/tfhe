@@ -105,7 +105,7 @@ pub(crate) fn mod_switch_from_torus32(phase: Torus32, message_size: i32) -> i32 
 /// in a space with `message_space` possible elements.
 /// # Note
 /// The `message_space` must be a power of 2.
-pub(crate) const fn encode_message(mu: i32, message_space: i32) -> Torus32 {
+pub const fn encode_message(mu: i32, message_space: i32) -> Torus32 {
   let log2 = message_space.trailing_zeros();
   mu << (32 - log2)
 }
