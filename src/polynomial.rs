@@ -70,20 +70,22 @@ fn match_and_pad<T>(
   b: Vec<T>,
 ) -> (std::collections::VecDeque<T>, std::collections::VecDeque<T>)
 where
-  T: Default,
+  T: Default + Clone,
 {
   let mut diff = a.len() as i32 - b.len() as i32;
 
   let mut a_copy = std::collections::VecDeque::from(a);
   let mut b_copy = std::collections::VecDeque::from(b);
 
+  let default = T::default();
+
   while diff > 0 {
-    b_copy.push_front(T::default());
+    b_copy.push_front(default.clone());
     diff -= 1;
   }
 
   while diff < 0 {
-    a_copy.push_front(T::default());
+    a_copy.push_front(default.clone());
     diff += 1;
   }
   (a_copy, b_copy)
