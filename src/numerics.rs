@@ -184,8 +184,6 @@ where
   use rustfft::num_complex::Complex;
   use rustfft::FFTplanner;
 
-  assert_eq!(a.len(), a.len());
-
   let degree = a.len() + b.len() - 2;
   let mut p: Vec<_> = a
     .coefs()
@@ -196,11 +194,9 @@ where
     .map(|x| Complex::new(x, 0f64))
     .collect();
 
-  if !is_power_of_2(p.len()) {
-    let mut power = 1;
-    while power < p.len() {
-      power *= 2;
-    }
+  let power = p.len().next_power_of_two();
+  if power != p.len() {
+    // Extend the polynomial to a power of 2 length
     p.extend(
       std::iter::repeat(Complex::<f64>::zero())
         .take(power - p.len())
@@ -217,11 +213,9 @@ where
     .map(|x| Complex::new(x, 0f64))
     .collect();
 
-  if !is_power_of_2(q.len()) {
-    let mut power = 1;
-    while power < q.len() {
-      power *= 2;
-    }
+  let power = q.len().next_power_of_two();
+  if power != q.len() {
+    // Extend the polynomial to a power of 2 length
     q.extend(
       std::iter::repeat(num_traits::identities::Zero::zero())
         .take(power - q.len())
