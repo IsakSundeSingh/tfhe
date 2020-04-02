@@ -232,6 +232,7 @@ macro_rules! impl_from {
     where
       T: AsRef<[$ty]>,
     {
+      #[inline]
       fn from(s: T) -> Self {
         let coefs = s.as_ref();
         Self {
@@ -246,6 +247,7 @@ macro_rules! impl_from {
 macro_rules! impl_from_poly {
   ($name: ident, $ty: ty) => {
     impl From<$ty> for $name {
+      #[inline]
       fn from(p: $ty) -> Self {
         Self {
           coefs: p.coefs,
