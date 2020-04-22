@@ -3,7 +3,6 @@ use crate::numerics::{
   gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r, Modulo, Torus32,
 };
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
-use rand::distributions::Distribution;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TLweParameters {
@@ -43,12 +42,18 @@ impl TLweKey {
   pub(crate) fn generate(params: &TLweParameters) -> Self {
     let n = params.n;
     let k = params.k;
-    let d = rand_distr::Uniform::new(0, 1);
+    use rand::Rng;
     let mut rng = rand::thread_rng();
 
     // Fill key with random integers
     let key: Vec<IntPolynomial> = (0..k)
-      .map(|_| IntPolynomial::from((0..n).map(|_| d.sample(&mut rng)).collect::<Vec<i32>>()))
+      .map(|_| {
+        IntPolynomial::from(
+          (0..n)
+            .map(|_| if rng.gen::<bool>() { 1 } else { 0 })
+            .collect::<Vec<i32>>(),
+        )
+      })
       .collect();
 
     Self {

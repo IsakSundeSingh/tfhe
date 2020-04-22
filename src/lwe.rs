@@ -232,14 +232,13 @@ impl LweKey {
   /// The Lwe key for the result must be allocated and initialized
   /// (this means that the parameters are already in the result)
   pub fn generate(params: &LweParams) -> Self {
-    use rand::distributions::Distribution;
+    use rand::Rng;
 
     let n = params.n;
-    let d = rand::distributions::Uniform::new_inclusive(0, 1);
-
-    // TODO: Use cryptographically safe RNG
     let mut rng = rand::thread_rng();
-    let key = (0..n).map(|_| d.sample(&mut rng)).collect();
+    let key = (0..n)
+      .map(|_| if rng.gen::<bool>() { 1 } else { 0 })
+      .collect();
 
     Self {
       params: params.clone(),
@@ -252,15 +251,13 @@ impl LweKey {
   /// (this means that the parameters are already in the result)
   /// TODO: Rewrite this function to return a `LweSample` as it overwrites all values and has all it needs to create a sample instead of mutating one
   pub fn encrypt(&self, result: &mut LweSample, message: Torus32, alpha: f64) {
-    use rand::distributions::Distribution;
+    use rand::Rng;
 
     let n = self.params.n;
     result.b = gaussian32(message, alpha);
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
     let mut rng = rand::thread_rng();
+    rng.fill(&mut result.coefficients[..]);
     for i in 0..n as usize {
-      result.coefficients[i] = d.sample(&mut rng);
-
       // Overflowed here, using wrapping add to imitate C++ behavior
       result.b = result.b.wrapping_add(result.coefficients[i] * self.key[i]);
     }
@@ -276,19 +273,15 @@ impl LweKey {
     alpha: f64,
   ) {
     use crate::numerics::f64_to_torus_32;
-    use rand::distributions::Distribution;
+    use rand::Rng;
 
     let n = self.params.n;
-    result.b = message + f64_to_torus_32(noise);
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    result.b = message.wrapping_add(f64_to_torus_32(noise));
     let mut rng = rand::thread_rng();
-    for i in 0..n {
-      result.coefficients[i as usize] = d.sample(&mut rng);
-
+    rng.fill(&mut result.coefficients[..]);
+    for i in 0..n as usize {
       // Overflowed here, using wrapping add to imitate C++ behavior
-      result.b = result
-        .b
-        .wrapping_add(result.coefficients[i as usize] * self.key[i as usize]);
+      result.b = result.b.wrapping_add(result.coefficients[i] * self.key[i]);
     }
     result.current_variance = alpha * alpha;
   }
@@ -501,7 +494,7 @@ impl LweKeySwitchKey {
         for h in 1..self.base as usize {
           //    Torus32 mess = (in_key->key[i] * h)*(1<<(32-(j+1)*basebit));
           let message: Torus32 =
-            (in_key.key[i] * h as i32) * (1 << (32 - (j + 1) * self.base_bit as usize));
+            (in_key.key[i] * h as i32).wrapping_mul(1 << (32 - (j + 1) * self.base_bit as usize));
           out_key.encrypt_with_external_noise(&mut self.ks[i][j][h], message, noise[index], alpha);
           //    lweSymEncryptWithExternalNoise(&result->ks[i][j][h], mess, noise[index], alpha, out_key);
           index += 1;
@@ -689,12 +682,10 @@ mod tests {
   }
 
   fn fill_random(sample: &LweSample, params: &LweParams) -> LweSample {
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
     let mut rng = rand::thread_rng();
-    let coefficients = (0..sample.coefficients.len())
-      .map(|_| d.sample(&mut rng))
-      .collect();
-    let b = d.sample(&mut rng);
+    let mut coefficients = vec![0; sample.coefficients.len()];
+    rng.fill(&mut coefficients[..]);
+    let b = rng.gen();
     let current_variance = 0.2;
 
     LweSample {

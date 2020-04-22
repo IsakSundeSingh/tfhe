@@ -1,6 +1,5 @@
 use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
-use rand::distributions::Distribution;
 
 /// Polynomials modulo `X^N + 1` or `X^N - 1`, where `N-1` is the polynomial degree
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -287,9 +286,10 @@ impl_polynomial!(TorusPolynomial, i32);
 
 /// Simply generates a vector of length `n` with uniform distribution
 fn uniform(n: usize) -> Vec<i32> {
-  let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
-  let mut rng = rand::thread_rng();
-  (0..n as i32).map(|_| d.sample(&mut rng)).collect()
+  use rand::Rng;
+  let mut values = vec![0; n];
+  rand::thread_rng().fill(&mut values[..]);
+  values
 }
 
 /// Multiply the polynomial by `x^power`.
