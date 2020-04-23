@@ -275,6 +275,6 @@ pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
 }
 
 /** bootstrapped Mux(a,b,c) = a?b:c */
-pub fn boots_mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> LweSample {
+pub fn boots_mux(_a: &LweSample, _b: &LweSample, _c: &LweSample, _bk: &CloudKey) -> LweSample {
   todo!()
 }

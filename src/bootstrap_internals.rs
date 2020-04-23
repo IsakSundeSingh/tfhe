@@ -73,7 +73,6 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
 ) -> LweSample {
   let accum_params = &bk_params.tlwe_params;
   let extract_params = &accum_params.extracted_lweparams;
-  let big_n = accum_params.n;
   let _2n = 2 * v.len() as i32;
 
   let test_vec_bis = if barb != 0 {

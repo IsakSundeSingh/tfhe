@@ -254,7 +254,6 @@ impl LweKey {
     use rand::Rng;
     use std::num::Wrapping;
 
-    let n = self.params.n;
     result.b = gaussian32(message, alpha);
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
@@ -280,7 +279,6 @@ impl LweKey {
     use rand::Rng;
     use std::num::Wrapping;
 
-    let n = self.params.n;
     result.b = message.wrapping_add(f64_to_torus_32(noise));
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
