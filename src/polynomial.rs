@@ -1,15 +1,6 @@
 use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
 
-/// Polynomials modulo `X^N + 1` or `X^N - 1`, where `N-1` is the polynomial degree
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum Cyclicity {
-  /// A constant denoting negacyclic polynomial modulus (`X^N + 1`), to be supplied to the polynomial constructor.
-  Negacyclic,
-  /// A constant denoting cyclic polynomial modulus (`X^N - 1`), to be supplied to the polynomial constructor.
-  Cyclic,
-}
-
 pub(crate) trait Polynomial<T>:
   std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize>
 where
@@ -25,14 +16,11 @@ where
 
   fn iter(&self) -> std::slice::Iter<T>;
 
-  /// Determines the polynomial modulus' cyclicity.
-  fn cyclicity(&self) -> Cyclicity;
-
   /// Generates a random-generated polynomial of length `n` with uniform distribution of elements
   fn uniform(n: usize) -> Self;
 
   /// Initialize a polynomial with given coefficients and cyclitiy.
-  fn with(coefs: &[T], cyclicity: Cyclicity) -> Self;
+  fn with(coefs: &[T]) -> Self;
 
   /// Initialize a polynomial of size `n` where all values are zero.
   fn zero(n: usize) -> Self;
@@ -96,14 +84,12 @@ where
 #[derive(Clone, Debug, PartialEq)]
 pub struct IntPolynomial {
   pub(crate) coefs: Vec<i32>,
-  pub(crate) cyclicity: Cyclicity,
 }
 
 impl IntPolynomial {
   pub(crate) fn new(n: i32) -> Self {
     Self {
       coefs: vec![0; n as usize],
-      cyclicity: Cyclicity::Negacyclic,
     }
   }
 }
@@ -111,14 +97,12 @@ impl IntPolynomial {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct TorusPolynomial {
   pub(crate) coefs: Vec<Torus32>,
-  pub(crate) cyclicity: Cyclicity,
 }
 
 impl TorusPolynomial {
   pub(crate) fn new(n: i32) -> Self {
     Self {
       coefs: vec![0; n as usize],
-      cyclicity: Cyclicity::Negacyclic,
     }
   }
 }
@@ -194,10 +178,6 @@ macro_rules! impl_mul {
 macro_rules! impl_polynomial {
   ($name:ident, $ty: ty) => {
     impl Polynomial<$ty> for $name {
-      fn cyclicity(&self) -> Cyclicity {
-        self.cyclicity
-      }
-
       #[inline]
       fn coefs(&self) -> &[$ty] {
         &self.coefs
@@ -211,10 +191,9 @@ macro_rules! impl_polynomial {
         Self::from(uniform(n))
       }
 
-      fn with(coefs: &[$ty], cyclicity: Cyclicity) -> Self {
+      fn with(coefs: &[$ty]) -> Self {
         Self {
           coefs: coefs.to_vec(),
-          cyclicity,
         }
       }
 
@@ -236,7 +215,6 @@ macro_rules! impl_from {
         let coefs = s.as_ref();
         Self {
           coefs: coefs.to_vec(),
-          cyclicity: Cyclicity::Negacyclic,
         }
       }
     }
@@ -248,10 +226,7 @@ macro_rules! impl_from_poly {
     impl From<$ty> for $name {
       #[inline]
       fn from(p: $ty) -> Self {
-        Self {
-          coefs: p.coefs,
-          cyclicity: p.cyclicity,
-        }
+        Self { coefs: p.coefs }
       }
     }
   };
@@ -307,8 +282,8 @@ pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
   let power = power % n as i32;
   let mut coefs = vec![0; n as usize];
 
-  let shift_first = matches!(p.cyclicity(), Cyclicity::Negacyclic) && (!cycle);
-  let shift_last = matches!(p.cyclicity(), Cyclicity::Negacyclic) && cycle;
+  let shift_first = !cycle;
+  let shift_last = cycle;
 
   for j in 0..power {
     coefs[(j.modulo(n)) as usize] = if shift_first {
@@ -325,7 +300,7 @@ pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
       p[((j - power).modulo(n)) as usize]
     }
   }
-  IntPolynomial::with(&coefs, p.cyclicity())
+  IntPolynomial::with(&coefs)
 }
 
 #[cfg(test)]
