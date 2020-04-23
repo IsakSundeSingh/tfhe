@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
 
 use tfhe::bootstrapping::{bootstrapping_parameters, decrypt, encrypt, generate_keys};
 
@@ -11,7 +11,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
   let encrypted = encrypt(message, &secret_key);
   let mut group = c.benchmark_group("Encryption and decryption");
-
+  group.throughput(Throughput::Bytes(1));
   group.bench_function("encrypt bit", |b| {
     b.iter_with_large_drop(|| encrypt(black_box(message), &secret_key))
   });
