@@ -278,15 +278,20 @@ impl LweKey {
   ) {
     use crate::numerics::f64_to_torus_32;
     use rand::Rng;
+    use std::num::Wrapping;
 
     let n = self.params.n;
     result.b = message.wrapping_add(f64_to_torus_32(noise));
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
-    for i in 0..n as usize {
-      // Overflowed here, using wrapping add to imitate C++ behavior
-      result.b = result.b.wrapping_add(result.coefficients[i] * self.key[i]);
-    }
+
+    let values: Wrapping<i32> = result
+      .coefficients
+      .iter()
+      .zip(self.key.iter())
+      .map(|(a, b)| Wrapping(a * b))
+      .sum();
+    result.b = result.b.wrapping_add(values.0);
     result.current_variance = alpha * alpha;
   }
 
@@ -323,17 +328,16 @@ impl LweKey {
  * This function computes the phase of sample by using key : phi = b - a.s
  */
 pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
+  use std::num::Wrapping;
   let a: &Vec<Torus32> = &sample.coefficients;
   let k = &key.key;
 
   let axs: Torus32 = a
     .iter()
     .zip(k.iter())
-    .fold(0i32, |acc, (a, k)| acc.wrapping_add(a * k));
-  // for i in 0..n {
-  //   // Overflowed here, using wrapping add to imitate C++ behavior
-  //   axs = axs.wrapping_add(a[i as usize] * k[i as usize]);
-  // }
+    .map(|(a, k)| Wrapping(a * k))
+    .sum::<Wrapping<i32>>()
+    .0;
 
   // Overflowed here, using wrapping sub to imitate C++ behavior
   sample.b.wrapping_sub(axs)
