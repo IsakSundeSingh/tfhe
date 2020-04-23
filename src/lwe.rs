@@ -252,15 +252,19 @@ impl LweKey {
   /// TODO: Rewrite this function to return a `LweSample` as it overwrites all values and has all it needs to create a sample instead of mutating one
   pub fn encrypt(&self, result: &mut LweSample, message: Torus32, alpha: f64) {
     use rand::Rng;
+    use std::num::Wrapping;
 
     let n = self.params.n;
     result.b = gaussian32(message, alpha);
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
-    for i in 0..n as usize {
-      // Overflowed here, using wrapping add to imitate C++ behavior
-      result.b = result.b.wrapping_add(result.coefficients[i] * self.key[i]);
-    }
+    let values: Wrapping<i32> = result
+      .coefficients
+      .iter()
+      .zip(self.key.iter())
+      .map(|(a, b)| Wrapping(a * b))
+      .sum();
+    result.b = result.b.wrapping_add(values.0);
     result.current_variance = alpha * alpha;
   }
 
