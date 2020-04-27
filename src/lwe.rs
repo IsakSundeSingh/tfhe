@@ -33,7 +33,7 @@ impl LweSample {
 impl std::ops::Add<LweSample> for LweSample {
   type Output = Self;
   fn add(self, rhs: LweSample) -> LweSample {
-    assert_eq!(
+    debug_assert_eq!(
       self.coefficients.len(),
       rhs.coefficients.len(),
       "Cannot add samples with different sizes! lhs.len() = {}, rhs.len() = {}",
@@ -61,7 +61,7 @@ impl std::ops::Add<LweSample> for LweSample {
 impl std::ops::Sub<LweSample> for LweSample {
   type Output = Self;
   fn sub(self, rhs: LweSample) -> LweSample {
-    assert_eq!(self.coefficients.len(), rhs.coefficients.len());
+    debug_assert_eq!(self.coefficients.len(), rhs.coefficients.len());
     let coefficients = self
       .coefficients
       .iter()
@@ -255,6 +255,7 @@ impl LweKey {
     result.b = gaussian32(message, alpha);
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
+    debug_assert_eq!(result.coefficients.len(), self.key.len());
     let values: Wrapping<i32> = result
       .coefficients
       .iter()
@@ -281,6 +282,7 @@ impl LweKey {
     let mut rng = rand::thread_rng();
     rng.fill(&mut result.coefficients[..]);
 
+    debug_assert_eq!(result.coefficients.len(), self.key.len());
     let values: Wrapping<i32> = result
       .coefficients
       .iter()
@@ -327,7 +329,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   use std::num::Wrapping;
   let a: &Vec<Torus32> = &sample.coefficients;
   let k = &key.key;
-
+  debug_assert_eq!(a.len(), k.len());
   let axs: Torus32 = a
     .iter()
     .zip(k.iter())

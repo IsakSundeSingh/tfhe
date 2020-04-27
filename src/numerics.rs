@@ -132,7 +132,7 @@ pub(crate) fn torus_polynomial_mul_r(
   poly2: &TorusPolynomial,
 ) {
   let res = poly_multiplier(poly1, poly2);
-
+  debug_assert_eq!(result.coefs.len(), res.coefs.len());
   result.coefs = result
     .coefs
     .iter()
