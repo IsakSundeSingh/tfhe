@@ -236,9 +236,7 @@ impl LweKey {
 
     let n = params.n;
     let mut rng = rand::thread_rng();
-    let key = (0..n)
-      .map(|_| if rng.gen::<bool>() { 1 } else { 0 })
-      .collect();
+    let key = (0..n).map(|_| if rng.gen() { 1 } else { 0 }).collect();
 
     Self {
       params: params.clone(),
@@ -762,7 +760,7 @@ mod tests {
   #[test]
   fn test_key_switch() {
     let mut rng = rand::thread_rng();
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let d = rand_distr::Uniform::new(i32::MIN, i32::MAX);
     let params500 = LweParams::new(500, 0f64, 1f64);
     let key500 = LweKey::generate(&params500);
     let alpha = 1e-5;
@@ -783,7 +781,8 @@ mod tests {
         false => 0,
       })
       .collect();
-    let ai: Vec<Torus32> = (0..n).map(|_| d.sample(&mut rng)).collect();
+    let mut ai = vec![0; n as usize];
+    rng.fill(&mut ai[..]);
     let aibar: Vec<u32> = ai
       .iter()
       .map(|a| ((a + prec_offset) as u32) & prec_mask)

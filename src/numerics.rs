@@ -403,7 +403,7 @@ mod tests {
   #[test]
   fn test_approximate_phase() {
     let mut rng = rand::thread_rng();
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let d = rand_distr::Uniform::new(i32::MIN, i32::MAX);
     for i in 2..200 {
       let v = d.sample(&mut rng);
       let w = approximate_phase(v, i);
@@ -449,7 +449,7 @@ mod tests {
   /// Converts mu/Msize to a Torus32 for mu in [0,Msize[
   fn test_mod_switch_to_torus_32() {
     let mut rng = rand::thread_rng();
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let d = rand_distr::Uniform::new(i32::MIN, i32::MAX);
     for i in 2..200 {
       let j = d.sample(&mut rng) % i;
       let v: Torus32 = mod_switch_to_torus32(j, i);
@@ -467,7 +467,7 @@ mod tests {
   #[test]
   fn test_mod_switch_from_torus_32() {
     let mut rng = rand::thread_rng();
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let d = rand_distr::Uniform::new(i32::MIN, i32::MAX);
     for i in 2..200 {
       let v: Torus32 = d.sample(&mut rng);
       let w = mod_switch_from_torus32(v, i);

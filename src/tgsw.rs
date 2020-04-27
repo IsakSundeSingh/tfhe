@@ -439,7 +439,7 @@ mod tests {
   fn random_int_polynomial(n: i32) -> IntPolynomial {
     let mut rng = rand::thread_rng();
     use rand::distributions::Distribution;
-    let d = rand_distr::Uniform::new(i32::min_value(), i32::max_value());
+    let d = rand_distr::Uniform::new(i32::MIN, i32::MAX);
 
     let coefs: Vec<i32> = (0..n).map(|_| d.sample(&mut rng) % 10 - 5).collect();
     assert_eq!(coefs.len() as i32, n);
