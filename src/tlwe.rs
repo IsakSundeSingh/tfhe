@@ -129,14 +129,6 @@ impl TLweSample {
       .chain(std::iter::once(a_last_part + poly_sum))
       .collect();
 
-    // for i in 0..k {
-    //   crate::numerics::torus_polynomial_mul_r(
-    //     &mut self.b,
-    //     &key.key[i as usize],
-    //     &self.a[i as usize],
-    //   );
-    // }
-
     self.current_variance = alpha * alpha;
   }
 
@@ -238,12 +230,7 @@ pub(crate) fn mul_by_monomial(x: TLweSample, shift: i32) -> TLweSample {
     a: x
       .a
       .into_iter()
-      .map(|c| {
-        TorusPolynomial::from(crate::polynomial::mul_by_monomial(
-          IntPolynomial::from(c),
-          shift,
-        ))
-      })
+      .map(|c| crate::polynomial::mul_by_monomial(c, shift))
       .collect(),
     current_variance: x.current_variance,
     k: x.k,

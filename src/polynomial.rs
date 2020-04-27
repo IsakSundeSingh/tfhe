@@ -270,14 +270,17 @@ fn uniform(n: usize) -> Vec<i32> {
 /// Multiply the polynomial by `x^power`.
 /// If `power` lies outside `[0, 2 * N)` where `N-1` is the maximum degree of the polynomial,
 /// a modulo `2 * N` will be taken.
-pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
+pub(crate) fn mul_by_monomial<P>(p: P, power: i32) -> P
+where
+  P: Polynomial<i32>,
+  P: std::ops::Index<usize, Output = i32>,
+  <P as std::ops::Index<usize>>::Output: std::ops::Neg<Output = i32>,
+{
   if power == 0 {
     return p;
   }
 
   let n = p.len() as i32;
-  // let newpower = (dbg!(power).modulo(dbg!(n) as i32)) as usize;
-  // let power = dbg!(newpower);
   let cycle: bool = (power / n as i32).modulo(2) == 1;
   let power = power % n as i32;
   let mut coefs = vec![0; n as usize];
@@ -300,7 +303,7 @@ pub(crate) fn mul_by_monomial(p: IntPolynomial, power: i32) -> IntPolynomial {
       p[((j - power).modulo(n)) as usize]
     }
   }
-  IntPolynomial::with(&coefs)
+  P::with(&coefs)
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 use crate::{
   lwe::{lwe_key_switch, LweBootstrappingKey, LweSample},
   numerics::{Modulo, Torus32},
-  polynomial::{IntPolynomial, Polynomial, TorusPolynomial},
+  polynomial::{Polynomial, TorusPolynomial},
   tgsw::{tgsw_extern_mul_to_tlwe, TGswParams, TGswSample},
   tlwe::TLweSample,
 };
@@ -77,10 +77,7 @@ pub(crate) fn tfhe_blind_rotate_and_extract(
 
   let test_vec_bis = if barb != 0 {
     // `_2n - barb` should be equivalent to `-barb mod _2n`
-    TorusPolynomial::from(crate::polynomial::mul_by_monomial(
-      IntPolynomial::from(v),
-      (-barb).modulo(_2n),
-    ))
+    crate::polynomial::mul_by_monomial(v, (-barb).modulo(_2n))
   } else {
     v
   };
