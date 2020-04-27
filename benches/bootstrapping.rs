@@ -32,7 +32,7 @@ fn bootstrapping_benchmark(c: &mut Criterion) {
 #[cfg(feature = "bootstrapping")]
 criterion_group!(
   name = benches;
-  config = Criterion::default().sample_size(SAMPLE_SIZE);
+  config = Criterion::default().sample_size(SAMPLE_SIZE).measurement_time(std::time::Duration::from_secs(50));
   targets = bootstrapping_benchmark
 );
 #[cfg(feature = "bootstrapping")]
