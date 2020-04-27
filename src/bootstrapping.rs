@@ -71,7 +71,7 @@ pub fn boots_constant(value: bool, bk: &CloudKey) -> LweSample {
   LweSample {
     coefficients: vec![0; in_out_params.n as usize],
     b: if value { MU } else { -MU },
-    current_variance: 0f64,
+    current_variance: 0_f64,
   }
 }
 

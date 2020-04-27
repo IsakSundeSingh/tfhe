@@ -85,7 +85,7 @@ impl TLweSample {
     let a = vec![TorusPolynomial::new(params.n); (params.k + 2) as usize];
     Self {
       a,
-      current_variance: 0f64,
+      current_variance: 0_f64,
       k: params.k,
     }
   }
@@ -149,16 +149,11 @@ impl TLweSample {
       .map(|poly| TorusPolynomial::zero(poly.len()))
       .collect();
 
-    self.current_variance = 0f64;
+    self.current_variance = 0_f64;
   }
 
   /// self += p * sample
-  pub(crate) fn add_mul_r_(
-    &mut self,
-    p: &IntPolynomial,
-    sample: &TLweSample,
-    params: &TLweParameters,
-  ) {
+  pub(crate) fn add_mul_r_(&mut self, p: &IntPolynomial, sample: &Self, params: &TLweParameters) {
     let k = params.k;
 
     for i in 0..=k as usize {

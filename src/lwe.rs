@@ -17,7 +17,7 @@ impl LweSample {
     Self {
       coefficients: vec![0; params.n as usize],
       b: 0,
-      current_variance: 0f64,
+      current_variance: 0_f64,
     }
   }
 
@@ -123,7 +123,7 @@ impl std::ops::Not for LweSample {
       current_variance,
     } = self;
     Self {
-      coefficients: coefficients.iter().map(|c| -c).collect(),
+      coefficients: coefficients.iter().map(std::ops::Neg::neg).collect(),
       b: -b,
       current_variance,
     }
@@ -155,7 +155,7 @@ impl Parameters {
 }
 
 impl Default for Parameters {
-  /// Returns the standard security level of around 128 bits
+  /// Returns parameters for the standard security level of around 128 bits
   fn default() -> Self {
     const N: i32 = 1024;
     const K: i32 = 1;
@@ -484,7 +484,7 @@ impl LweKeySwitchKey {
 
     // Choose a random vector of gaussian noises
     let mut rng = rand::thread_rng();
-    let d = rand_distr::Normal::new(0f64, alpha).expect("Could not create normal distributioon");
+    let d = rand_distr::Normal::new(0_f64, alpha).expect("Could not create normal distributioon");
     let noise: Vec<f64> = (0..size_ks).map(|_| d.sample(&mut rng)).collect();
     let error: f64 = noise.iter().sum::<f64>() / size_ks as f64;
     // Recenter the noises

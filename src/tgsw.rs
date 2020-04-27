@@ -41,7 +41,7 @@ impl TGswParams {
     for i in 0..l {
       let kk = (32 - (i + 1)) * bg_bit;
       // 1/(Bg^(i+1)) as a Torus32
-      h.push(1i32.checked_shl(kk as u32).unwrap_or(0));
+      h.push(1_i32.checked_shl(kk as u32).unwrap_or(0));
     }
 
     // offset = Bg/2 * (2^(32-Bgbit) + 2^(32-2*Bgbit) + ... + 2^(32-l*Bgbit))
@@ -92,7 +92,7 @@ impl TGswKey {
   }
 
   pub(crate) fn encrypt(&self, result: &mut TGswSample, message: i32, alpha: f64) {
-    result.encrypt_zero(alpha, &self);
+    result.encrypt_zero(alpha, self);
     result.add_mu_int_h(message, &self.params);
   }
 }
@@ -243,7 +243,7 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
       .iter()
       .map(|polynomial| TorusPolynomial::zero(polynomial.len()))
       .collect(),
-    current_variance: 0f64,
+    current_variance: 0_f64,
     k: accum.k,
   };
 

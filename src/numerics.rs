@@ -10,7 +10,7 @@ use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 pub type Torus32 = i32;
 
 /// 2 ^ 32
-const TWO_32: f64 = 4_294_967_296f64;
+const TWO_32: f64 = 4_294_967_296_f64;
 
 pub(crate) trait Modulo<RHS = Self> {
   type Output;
@@ -34,7 +34,7 @@ pub(crate) fn gaussian32(message: Torus32, sigma: f64) -> Torus32 {
   use rand::distributions::Distribution;
 
   // Attention: all the implementation will use the stdev instead of the gaussian fourier param
-  let d = rand_distr::Normal::new(0f64, sigma).expect("Could not create normal distribution");
+  let d = rand_distr::Normal::new(0_f64, sigma).expect("Could not create normal distribution");
   let mut rng = rand::thread_rng();
   let error = d.sample(&mut rng);
 
@@ -58,7 +58,7 @@ pub(crate) fn torus_32_to_f64(x: Torus32) -> f64 {
 /// "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
 pub(crate) fn approximate_phase(phase: Torus32, message_size: i32) -> Torus32 {
   // Width of each interval
-  let interval: u64 = ((1u64 << 63) / (message_size as u64)) * 2;
+  let interval: u64 = ((1_u64 << 63) / (message_size as u64)) * 2;
 
   // Beginning of the first interval
   let half_interval: u64 = interval / 2;
@@ -79,7 +79,7 @@ pub(crate) fn approximate_phase(phase: Torus32, message_size: i32) -> Torus32 {
 /// "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
 pub(crate) const fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32 {
   // Width of each interval
-  let interval: u64 = ((1u64 << 63) / message_size as u64) * 2;
+  let interval: u64 = ((1_u64 << 63) / message_size as u64) * 2;
 
   // Overflowed here, using wrapping mul to imitate C++ behavior
   let phase64: u64 = (mu as u64).wrapping_mul(interval);
@@ -92,9 +92,9 @@ pub(crate) const fn mod_switch_to_torus32(mu: i32, message_size: i32) -> Torus32
 // The constant Msize will indicate on which message space we are working (how many messages possible)
 //
 // "travailler sur 63 bits au lieu de 64, car dans nos cas pratiques, c'est plus précis"
-pub(crate) fn mod_switch_from_torus32(phase: Torus32, message_size: i32) -> i32 {
+pub(crate) const fn mod_switch_from_torus32(phase: Torus32, message_size: i32) -> i32 {
   // width of each intervall
-  let interval: u64 = ((1u64 << 63) / message_size as u64) * 2;
+  let interval: u64 = ((1_u64 << 63) / message_size as u64) * 2;
   let half_interval: u64 = interval / 2;
   let phase64: u64 = ((phase as u64) << 32).wrapping_add(half_interval);
   //floor to the nearest multiples of interv
@@ -115,14 +115,14 @@ pub const fn encode_message(mu: i32, message_space: i32) -> Torus32 {
 /// # Panics
 /// Panics if the `message_space` isn't a power of 2.
 pub(crate) fn decode_message(phase: Torus32, message_space: i32) -> i32 {
-  assert!(is_power_of_2(message_space as usize));
+  assert!(is_power_of_2(message_space as i32));
   let log2 = message_space.trailing_zeros();
   (phase.wrapping_add(1 << (32 - log2 - 1))) >> (32 - log2)
 }
 
 /// Pretty self-descriptive
 #[inline]
-fn is_power_of_2(x: usize) -> bool {
+const fn is_power_of_2(x: i32) -> bool {
   (x & (x - 1)) == 0
 }
 
@@ -184,8 +184,8 @@ where
     .iter()
     .rev()
     .map(|x| f64::from(*x))
-    .chain(std::iter::repeat(0f64).take(b.len() - 1))
-    .map(|x| Complex::new(x, 0f64))
+    .chain(std::iter::repeat(0_f64).take(b.len() - 1))
+    .map(|x| Complex::new(x, 0_f64))
     .collect();
 
   let power = p.len().next_power_of_two();
@@ -202,8 +202,8 @@ where
     .iter()
     .rev()
     .map(|x| f64::from(*x))
-    .chain(std::iter::repeat(0f64).take(a.len() - 1))
-    .map(|x| Complex::new(x, 0f64))
+    .chain(std::iter::repeat(0_f64).take(a.len() - 1))
+    .map(|x| Complex::new(x, 0_f64))
     .collect();
 
   let power = q.len().next_power_of_two();
