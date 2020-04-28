@@ -1,5 +1,5 @@
 use crate::numerics::{approximate_phase, gaussian32, Torus32};
-use crate::tgsw::{TGswKey, TGswParams, TGswSample, TGswSampleFFT};
+use crate::tgsw::{TGswKey, TGswParams, TGswSample};
 use crate::tlwe::TLweKey;
 use crate::tlwe::TLweParameters;
 
@@ -206,15 +206,10 @@ impl CloudKey {
 pub struct SecretKey {
   pub(crate) params: Parameters,
   pub(crate) lwe_key: LweKey,
-  tgsw_key: TGswKey,
 }
 impl SecretKey {
-  pub fn new(params: Parameters, lwe_key: LweKey, tgsw_key: TGswKey) -> Self {
-    Self {
-      params,
-      lwe_key,
-      tgsw_key,
-    }
+  pub fn new(params: Parameters, lwe_key: LweKey) -> Self {
+    Self { params, lwe_key }
   }
 }
 
@@ -425,21 +420,6 @@ impl LweBootstrappingKey {
     }
     key
   }
-}
-
-pub struct LweBootstrappingKeyFFT {
-  ///< paramètre de l'input et de l'output. key: s
-  pub(crate) in_out_params: LweParams,
-  ///< params of the Gsw elems in bk. key: s"
-  pub(crate) bk_params: TGswParams,
-  ///< params of the accum variable key: s"
-  pub(crate) accum_params: TLweParameters,
-  ///< params after extraction: key: s'
-  pub(crate) extract_params: LweParams,
-  ///< the bootstrapping key (s->s")
-  pub(crate) bk_fft: TGswSampleFFT,
-  ///< the keyswitch key (s'->s)
-  pub(crate) ks: LweKeySwitchKey,
 }
 
 #[derive(Clone)]

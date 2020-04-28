@@ -31,7 +31,7 @@ pub fn generate_keys(params: &Parameters) -> (SecretKey, CloudKey) {
   let tgsw_key = TGswKey::generate(&params.tgsw_params);
   let bk = LweBootstrappingKey::create(&params, &lwe_key, &tgsw_key);
   (
-    SecretKey::new(params.clone(), lwe_key, tgsw_key),
+    SecretKey::new(params.clone(), lwe_key),
     CloudKey::new(params.clone(), bk),
   )
 }

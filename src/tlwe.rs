@@ -1,7 +1,5 @@
 use crate::lwe::{LweParams, LweSample};
-use crate::numerics::{
-  gaussian32, torus_polynomial_mul_by_xai_minus_one, torus_polynomial_mul_r, Modulo, Torus32,
-};
+use crate::numerics::{gaussian32, torus_polynomial_mul_r};
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -132,14 +130,6 @@ impl TLweSample {
     self.current_variance = alpha * alpha;
   }
 
-  fn encrypt_sym_t(&mut self, message: Torus32, alpha: f64, key: &TLweKey) {
-    self.encrypt_zero(alpha, key);
-    match self.a.len() {
-      0 => panic!("Could not set b as a had length 0!"),
-      n => self.a[n - 1].coefs[0] += message,
-    }
-  }
-
   /// Sets all values to zero
   /// TODO: Remove this function when things stabilize. We shouldn't need to reuse values like in C++/C
   pub(crate) fn clear(&mut self) {
@@ -229,67 +219,5 @@ pub(crate) fn mul_by_monomial(x: TLweSample, shift: i32) -> TLweSample {
       .collect(),
     current_variance: x.current_variance,
     k: x.k,
-  }
-}
-
-/// Mult externe de X^ai-1 par bki
-pub(crate) fn tlwe_mul_by_xai_minus_one(
-  result: &TLweSample,
-  ai: i32,
-  bk: &TLweSample,
-  params: &TLweParameters,
-) -> TLweSample {
-  let torus_polynomials = bk
-    .a
-    .iter()
-    .map(|ba| torus_polynomial_mul_by_xai_minus_one(ai.modulo(2 * params.n), ba))
-    .collect();
-
-  // for i in 0..=k as usize {
-  //   torus_polynomial_mul_by_xai_minus_one(ai, &bk.a[i]);
-  //   // torusPolynomialMulByXaiMinusOne(&result->a[i], ai, &bk->a[i]);
-  // }
-
-  TLweSample {
-    a: torus_polynomials,
-    ..result.clone()
-  }
-}
-
-/// Figure out what this is
-#[derive(Clone)]
-struct LagrangeHalfCPolynomial<Data, Precomp> {
-  data: Data,
-  precomp: Precomp,
-}
-
-#[derive(Clone)]
-pub struct TLweSampleFFT {
-  /// array of length k+1: mask + right term
-  a: Vec<LagrangeHalfCPolynomial<u8, u8>>,
-  /// FIXME: This is some C++ shit. b is actually referring to a single value within a
-  /// alias of a[k] to get the right term
-  b: LagrangeHalfCPolynomial<u8, u8>,
-  /// avg variance of the sample
-  current_variance: f64,
-  /// TODO: Figure out if this is required...
-  /// required during the destructor call...
-  k: i32,
-}
-impl TLweSampleFFT {
-  fn new(
-    params: TLweParameters,
-    arr: Vec<LagrangeHalfCPolynomial<u8, u8>>,
-    current_variance: f64,
-  ) -> Self {
-    let k = params.k;
-    let b = (&arr[k as usize]).clone();
-    Self {
-      a: arr,
-      // a is a table of k+1 polynomials, b is an alias for &a[k]
-      b,
-      current_variance,
-      k,
-    }
   }
 }

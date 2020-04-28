@@ -1,6 +1,6 @@
 use crate::numerics::Torus32;
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
-use crate::tlwe::{TLweKey, TLweParameters, TLweSample, TLweSampleFFT};
+use crate::tlwe::{TLweKey, TLweParameters, TLweSample};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TGswParams {
@@ -69,11 +69,7 @@ pub struct TGswKey {
   pub(crate) params: TGswParams,
 
   /// the tlwe params of each rows
-  tlwe_params: TLweParameters,
-
-  /// the key (array of k polynomials)
-  key: Vec<IntPolynomial>,
-
+  // tlwe_params: TLweParameters,
   pub(crate) tlwe_key: TLweKey,
 }
 
@@ -82,11 +78,9 @@ impl TGswKey {
   pub(crate) fn generate(params: &TGswParams) -> Self {
     let tlwe_params = params.tlwe_params.clone();
     let tlwe_key = TLweKey::generate(&tlwe_params);
-    let key = tlwe_key.key.clone();
     Self {
       params: params.clone(),
-      tlwe_params,
-      key,
+      // tlwe_params,
       tlwe_key,
     }
   }
@@ -312,33 +306,6 @@ fn tgsw_torus32_polynomial_decomposition_h(
   }
 }
 
-pub struct TGswSampleFFT {
-  /// TLweSample* all_sample; (k+1)l TLwe Sample
-  all_samples: Vec<TLweSampleFFT>,
-  //   TLweSampleFFT **sample; /// optional access to the different size blocks l
-  sample: Option<TLweSampleFFT>,
-  k: i32,
-  l: i32,
-}
-
-// impl TGswSampleFFT {
-//   fn new(params: TGswParams, all_samples_raw: Vec<TLweSampleFFT>) -> Self {
-//     let k = params.tlwe_params.k;
-//     let l = params.l;
-//     let all_samples = all_samples_raw;
-//     let mut sample: Vec<Option<TLweSampleFFT>> = vec![None; ((k + 1) * l) as usize];
-//     for p in 0..(k + 1) {
-//       sample[p as usize] = Some(all_samples[(p * l) as usize]);
-//     }
-//     Self {
-//       all_samples,
-//       sample,
-//       k,
-//       l,
-//     }
-//   }
-// }
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -360,25 +327,6 @@ mod tests {
       .iter()
       .map(TGswKey::generate)
       .collect()
-  }
-
-  /*
-   *  Testing the function tGswKeyGen
-   * This function generates a random TLwe key for the given parameters
-   * The TLwe key for the result must be allocated and initialized
-   * (this means that the parameters are already in the result)
-   */
-  #[test]
-  fn test_key_generation() {
-    for param in generate_parameters() {
-      let key = TGswKey::generate(&param);
-
-      // Assert key is binary (could be eliminated by )
-      assert!(key
-        .key
-        .iter()
-        .all(|key| key.coefs.iter().all(|&c| c == 1i32 || c == 0i32)));
-    }
   }
 
   fn fully_random_tgsw(sample: &mut TGswSample, alpha: f64, params: &TGswParams) {
