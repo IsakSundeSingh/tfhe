@@ -2,7 +2,7 @@ use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
 
 pub(crate) trait Polynomial<T>:
-  std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize>
+  std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize, Output = T>
 where
   Self: Sized,
 {
@@ -273,7 +273,6 @@ fn uniform(n: usize) -> Vec<i32> {
 pub(crate) fn mul_by_monomial<P>(p: P, power: i32) -> P
 where
   P: Polynomial<i32> + std::ops::Index<usize, Output = i32>,
-  <P as std::ops::Index<usize>>::Output: std::ops::Neg<Output = i32>,
 {
   if power == 0 {
     return p;
