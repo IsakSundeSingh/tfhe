@@ -23,9 +23,10 @@ pub fn bootstrapping_parameters(minimum_lambda: i32) -> Parameters {
 /// # Example
 ///
 /// ```rust
-/// # use tfhe::bootstrapping::{generate_keys, bootstrapping_parameters};
+/// # use tfhe::bootstrapping::{generate_keys};
 /// # use tfhe::lwe::Parameters;
 /// let params = Parameters::default();
+/// # #[allow(unused)]
 /// let (secret_key, cloud_key) = generate_keys(&params);
 /// ```
 pub fn generate_keys(params: &Parameters) -> (SecretKey, CloudKey) {

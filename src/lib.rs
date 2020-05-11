@@ -23,6 +23,7 @@
 
 #![allow(dead_code)]
 #![forbid(unsafe_code)]
+#![doc(test(attr(deny(warnings))))]
 
 pub mod bootstrap_internals;
 pub mod bootstrapping;
