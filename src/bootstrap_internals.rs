@@ -1,3 +1,10 @@
+//! Module containing the bootstrapping procedure.
+//!
+//! The bootstrapping function [`tfhe_bootstrap`](fn.tfhe_bootstrap.html) can
+//! be used externally, but it should not be required unless you're implementing specific
+//! functionality such as custom gates and want to reduce the number of bootstrapping
+//! operations you perform.
+
 use crate::{
   lwe::{lwe_key_switch, LweBootstrappingKey, LweSample},
   numerics::{Modulo, Torus32},
@@ -6,11 +13,15 @@ use crate::{
   tlwe::TLweSample,
 };
 
+/// Performs the bootstrapping operation to the given ciphertext.
+/// This is an expensive operation and should only be performed if the
+/// ciphertext requires further computation.
+///
 /// # Arguments
-/// * `bk` - The bootstrapping + keyswitch key
-/// * `mu` - The output message (if phase(x)>0)
-/// * `x` - The input sample
-/// returns = LWE(mu) iff phase(x)>0, LWE(-mu) iff phase(x)<0
+/// - `bk` - The bootstrapping + keyswitch key
+/// - `mu` - The output message (if phase(x)>0)
+/// - `x` - The input sample
+/// Returns LWE(mu) iff phase(x) > 0, LWE(-mu) iff phase(x) < 0
 pub fn tfhe_bootstrap(bk: &LweBootstrappingKey, mu: Torus32, x: LweSample) -> LweSample {
   let res = tfhe_bootstrap_without_key_switching(bk, mu, x);
   // Key Switching

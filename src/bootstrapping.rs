@@ -1,3 +1,5 @@
+//! Module for all homomorphic gate operations, along with key generation, encryption and decryption.
+
 use crate::{
   lwe::{CloudKey, LweBootstrappingKey, LweKey, LweSample, Parameters, SecretKey},
   numerics::{encode_message, Torus32},

@@ -296,6 +296,7 @@ fn tgsw_torus32_polynomial_decomposition_h(
   let buf: Vec<i32> = sample.coefs.iter().map(|c| c + offset as i32).collect();
 
   // Then, do the decomposition (TODO: in parallel)
+  #[allow(clippy::needless_range_loop)]
   for p in 0..l as usize {
     let decal = 32 - (p + 1) as i32 * bg_bit;
     let res_p: &mut Vec<i32> = &mut result[p].coefs;

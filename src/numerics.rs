@@ -1,19 +1,25 @@
+//! Contains numeric functions that are used throughout the crate,
+//! such as encoding/decoding values, converting between torus values and regular
+//! integers, etc.
+
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
-/// Idea:
-/// we may want to represent an element x of the real torus by
-/// the integer rint(2^32.x) modulo 2^32
-///  -- addition, subtraction and integer combinations are native operation
-///  -- modulo 1 is mapped to mod 2^32, which is also native!
-/// This looks much better than using float/doubles, where modulo 1 is not
-/// natural at all.
+/// An element `x : Modulo` of the real torus is represented by the integer
+/// `(2^32 * x).modulo(2^32)`, where addition, subtraction and integer
+/// operations are native. Modulo 1 is mapped to modulo [2^32](constant.TWO_32.html),
+/// which is also native. This performs better than using floating-point values,
+/// where modulo 1 is not a natural operation.
 pub type Torus32 = i32;
 
-/// 2 ^ 32
+/// 2 ^ 32 represented as an `f64`.
 const TWO_32: f64 = 4_294_967_296_f64;
 
+/// A trait for integral values which can perform the modulo operation.
 pub(crate) trait Modulo<RHS = Self> {
+  /// The output value after the modulo operation, preferrably `Self`.
   type Output;
+
+  /// Performs the modulo operations such that the return-value `x` is always `0 <= x && x < rhs`.
   fn modulo(&self, rhs: RHS) -> Self::Output;
 }
 

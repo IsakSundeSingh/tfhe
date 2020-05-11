@@ -1,8 +1,19 @@
+//! Top-level encryption system types.
+//!
+//! Contains the [ciphertext](struct.LweSample.html),
+//! the [key parameters](struct.Parameters.html),
+//! the [secret key](struct.SecretKey.html)
+//! and the [cloud key](struct.CloudKey.html).
+
 use crate::numerics::{approximate_phase, gaussian32, Torus32};
 use crate::tgsw::{TGswKey, TGswParams, TGswSample};
 use crate::tlwe::TLweKey;
 use crate::tlwe::TLweParameters;
 
+/// Internal ciphertext structure.
+/// The `coefficients`-vector is often large and creating new ciphertexts
+/// implies allocating a vector of 1024 or more elements, depending
+/// on the key parameters.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LweSample {
   /// The coefficients of the mask
@@ -130,6 +141,7 @@ impl std::ops::Not for LweSample {
   }
 }
 
+/// Structure for containing the encryption scheme's parameters.
 #[derive(Clone)]
 pub struct Parameters {
   pub ks_t: i32,
@@ -186,6 +198,10 @@ impl Default for Parameters {
   }
 }
 
+/// Key for performing homomorphic operations to ciphertexts
+/// without gaining access to the data.
+/// Safe for sharing as it is meant to be used by a cloud vendor
+/// or some other third-party.
 #[derive(Clone)]
 pub struct CloudKey {
   pub(crate) params: Parameters,
@@ -203,16 +219,21 @@ impl CloudKey {
   }
 }
 
+/// Key to encrypt and decrypt data.
+/// **Not** safe to share.
 pub struct SecretKey {
   pub(crate) params: Parameters,
   pub(crate) lwe_key: LweKey,
 }
+
 impl SecretKey {
   pub fn new(params: Parameters, lwe_key: LweKey) -> Self {
     Self { params, lwe_key }
   }
 }
 
+/// Actual key used for encryption and decryption.
+/// **Not** safe to share. Embedded within the [`SecretKey`](struct.SecretKey.html) key.
 #[derive(Debug)]
 pub struct LweKey {
   params: LweParams,
@@ -317,9 +338,9 @@ impl LweKey {
   }
 }
 
-/**
- * This function computes the phase of sample by using key : phi = b - a.s
- */
+/// This function computes the phase of the sample by
+/// `b - sample.a .* key.key`, where `.*` is a broadcasting
+/// multiplication operator.
 pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   use std::num::Wrapping;
   let a: &Vec<Torus32> = &sample.coefficients;
@@ -359,6 +380,8 @@ impl LweParams {
   }
 }
 
+/// Key used for bootstrapping ciphertexts, safe to share.
+/// Is embedded in the [`CloudKey`](struct.CloudKey.html) key.
 #[derive(Clone)]
 pub struct LweBootstrappingKey {
   /// paramètre de l'input et de l'output. key: s

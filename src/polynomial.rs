@@ -1,3 +1,8 @@
+//! Contains traits, types and functions for working with integer polynomials.
+//!
+//! The [Polynomial](trait.Polynomial.html) trait is the core of the module,
+//! and is used throughout the crate.
+
 use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
 
@@ -14,12 +19,13 @@ where
   /// and the coefficient of the term with degree 0 is the last element.
   fn coefs(&self) -> &[T];
 
+  /// Returns an iterator over the coefficients of the polynomial.
   fn iter(&self) -> std::slice::Iter<T>;
 
   /// Generates a random-generated polynomial of length `n` with uniform distribution of elements
   fn uniform(n: usize) -> Self;
 
-  /// Initialize a polynomial with given coefficients and cyclitiy.
+  /// Initialize a polynomial with given coefficients.
   fn with(coefs: &[T]) -> Self;
 
   /// Initialize a polynomial of size `n` where all values are zero.
@@ -259,7 +265,7 @@ impl_index!(TorusPolynomial, i32);
 impl_polynomial!(IntPolynomial, i32);
 impl_polynomial!(TorusPolynomial, i32);
 
-/// Simply generates a vector of length `n` with uniform distribution
+/// Generates a vector of length `n` of `i32`s with uniform distribution
 fn uniform(n: usize) -> Vec<i32> {
   use rand::Rng;
   let mut values = vec![0; n];
