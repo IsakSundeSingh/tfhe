@@ -7,13 +7,20 @@ use crate::{
   tgsw::TGswKey,
 };
 
-/// Generate default gate bootstrapping parameters.
-/// `minimum_lambda` determines the minimum security level
-pub fn bootstrapping_parameters(minimum_lambda: i32) -> Parameters {
-  if minimum_lambda > 128 {
-    panic!("Sorry, for now, the parameters are only implemented for about 128bit of security!");
-  }
-  Parameters::default()
+/// The bit-level security wanted from the encryption parameters.
+/// Can be used in conjunction with [`Parameters::with`](struct.Parameters.html#method.with).
+/// Represents the bit-security or bit entropy of the scheme when using the
+/// current best-known attacks.
+pub enum SecurityLevel {
+  /// 80-bit security
+  Bit80,
+  /// 128-bit security
+  Bit128,
+}
+
+/// Generate gate bootstrapping parameters with a given security-level
+pub fn generate_parameters(bit_security: SecurityLevel) -> Parameters {
+  Parameters::with(bit_security)
 }
 
 /// Generate a keypair

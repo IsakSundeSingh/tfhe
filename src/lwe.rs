@@ -8,7 +8,7 @@
 use crate::numerics::{approximate_phase, gaussian32, Torus32};
 use crate::tgsw::{TGswKey, TGswParams, TGswSample};
 use crate::tlwe::TLweKey;
-use crate::tlwe::TLweParameters;
+use crate::{tlwe::TLweParameters, SecurityLevel};
 
 /// Internal ciphertext structure.
 /// The `coefficients`-vector is often large and creating new ciphertexts
@@ -164,37 +164,69 @@ impl Parameters {
       tgsw_params,
     }
   }
-}
 
-impl Default for Parameters {
-  /// Returns parameters for the standard security level of around 128 bits
-  fn default() -> Self {
+  /// Return encryption parameters with the given security level.
+  pub fn with(bit_security: SecurityLevel) -> Self {
     const N: i32 = 1024;
     const K: i32 = 1;
-    const LOWERCASE_N: i32 = 500;
-    const BK_L: i32 = 2;
-    const BK_BG_BIT: i32 = 10;
-    const KS_BASE_BIT: i32 = 2;
-    const KS_LENGTH: i32 = 8;
-
-    // Standard deviation
-    const KS_STDEV: f64 = 2.44e-5;
-
-    // Standard deviation
-    const BK_STDEV: f64 = 7.18e-9;
-
     // Max standard deviation for a 1/4 msg space
     const MAX_STDEV: f64 = 0.012_467;
 
-    let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
-    let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
-    let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
-    Self {
-      ks_t: KS_LENGTH,
-      ks_base_bit: KS_BASE_BIT,
-      in_out_params: params_in,
-      tgsw_params: params_bk,
+    const KS_BASE_BIT: i32 = 2;
+    const KS_LENGTH: i32 = 8;
+
+    match bit_security {
+      SecurityLevel::Bit80 => {
+        const LOWERCASE_N: i32 = 500;
+        const BK_L: i32 = 2;
+        const BK_BG_BIT: i32 = 10;
+
+        // Standard deviation
+        const KS_STDEV: f64 = 2.44e-5;
+
+        // Standard deviation
+        const BK_STDEV: f64 = 7.18e-9;
+
+        let params_in: LweParams = LweParams::new(LOWERCASE_N, KS_STDEV, MAX_STDEV);
+        let params_accum: TLweParameters = TLweParameters::new(N, K, BK_STDEV, MAX_STDEV);
+        let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
+        Self {
+          ks_t: KS_LENGTH,
+          ks_base_bit: KS_BASE_BIT,
+          in_out_params: params_in,
+          tgsw_params: params_bk,
+        }
+      }
+      SecurityLevel::Bit128 => {
+        const LOWERCASE_N: i32 = 630;
+        const BK_L: i32 = 3;
+        const BK_BG_BIT: i32 = 7;
+
+        // Standard deviation
+        let ks_stdev: f64 = 2_f64.powf(-15_f64);
+
+        // Standard deviation
+        let bk_stdev: f64 = 2_f64.powf(-15_f64);
+
+        let params_in: LweParams = LweParams::new(LOWERCASE_N, ks_stdev, MAX_STDEV);
+        let params_accum: TLweParameters = TLweParameters::new(N, K, bk_stdev, MAX_STDEV);
+        let params_bk: TGswParams = TGswParams::new(BK_L, BK_BG_BIT, params_accum);
+        Self {
+          ks_t: KS_LENGTH,
+          ks_base_bit: KS_BASE_BIT,
+          in_out_params: params_in,
+          tgsw_params: params_bk,
+        }
+      }
     }
+  }
+}
+
+impl Default for Parameters {
+  /// Returns parameters for the standard security level
+  /// ([`SecurityLevel`](../encryption/enum.SecurityLevel.html)) of around 128 bits
+  fn default() -> Self {
+    Self::with(SecurityLevel::Bit128)
   }
 }
 

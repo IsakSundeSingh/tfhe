@@ -12,7 +12,7 @@
 //! use tfhe::encryption::{Parameters, decrypt, encrypt, generate_keys};
 //! use tfhe::gates::{boots_constant, boots_xor};
 //! let message = false;
-//! let params = Parameters::default();
+//! let params = Parameters::default(); // 128-bit security
 //! let (secret_key, cloud_key) = generate_keys(&params);
 //! let encrypted = encrypt(message, &secret_key);
 //! let result = boots_xor(&encrypted, &boots_constant(true, &cloud_key), &cloud_key);

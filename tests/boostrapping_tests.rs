@@ -1,4 +1,6 @@
-use tfhe::encryption::{bootstrapping_parameters, decrypt, encrypt, generate_keys, Parameters};
+use tfhe::encryption::{
+  decrypt, encrypt, generate_keys, generate_parameters, Parameters, SecurityLevel,
+};
 use tfhe::gates::{
   boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
   boots_orny, boots_oryn, boots_xnor, boots_xor,
@@ -20,8 +22,7 @@ fn test_encrypt_decrypt() {
 
 #[test]
 fn test_bootstrapping_constant() {
-  let security = 128;
-  let params = bootstrapping_parameters(security);
+  let params = generate_parameters(SecurityLevel::Bit80);
   let (secret_key, cloud_key) = generate_keys(&params);
   let every_combo = vec![true, false];
 
@@ -36,8 +37,7 @@ macro_rules! test_binary_gate {
   ($test_name: ident, $binary_gate:ident, $encrypted_gate:ident) => {
     #[test]
     fn $test_name() {
-      let security = 128;
-      let params = bootstrapping_parameters(security);
+      let params = generate_parameters(SecurityLevel::Bit80);
       let (secret_key, cloud_key) = generate_keys(&params);
       let enc_true = encrypt(true, &secret_key);
       let enc_false = encrypt(false, &secret_key);
@@ -66,8 +66,7 @@ macro_rules! test_unary_gate {
   ($test_name: ident, $unary_gate:ident, $encrypted_gate:ident) => {
     #[test]
     fn $test_name() {
-      let security = 128;
-      let params = bootstrapping_parameters(security);
+      let params = generate_parameters(SecurityLevel::Bit80);
       let (secret_key, cloud_key) = generate_keys(&params);
       let enc_true = encrypt(true, &secret_key);
       let enc_false = encrypt(false, &secret_key);
