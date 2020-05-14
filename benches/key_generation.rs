@@ -1,11 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use tfhe::bootstrapping::{bootstrapping_parameters, generate_keys};
+use tfhe::encryption::{generate_keys, Parameters};
 
 /// Benchmarks the key generation with the default parameters
 fn key_generation_benchmark(c: &mut Criterion) {
-  let security = 128;
-  let params = bootstrapping_parameters(security);
+  let params = Parameters::default();
   c.bench_function("Generate key", |b| b.iter(|| generate_keys(&params)));
 }
 

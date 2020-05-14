@@ -1,8 +1,8 @@
-use tfhe::bootstrapping::{
+use tfhe::encryption::{bootstrapping_parameters, decrypt, encrypt, generate_keys};
+use tfhe::gates::{
   boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
   boots_orny, boots_oryn, boots_xnor, boots_xor,
 };
-use tfhe::bootstrapping::{bootstrapping_parameters, decrypt, encrypt, generate_keys};
 
 #[test]
 fn test_encrypt_decrypt_true_is_true() {

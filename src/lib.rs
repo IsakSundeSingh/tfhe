@@ -9,10 +9,10 @@
 //! # Example use
 //! The following is an example of encrypting a single bit (represented as a `bool`), performing the `xor` (`^`) operator on it and a publicly known constant `true`, while the ciphertext is encrypted.:
 //! ```rust
-//! use tfhe::bootstrapping::{boots_constant, boots_xor, bootstrapping_parameters, decrypt, encrypt, generate_keys};
+//! use tfhe::encryption::{Parameters, decrypt, encrypt, generate_keys};
+//! use tfhe::gates::{boots_constant, boots_xor};
 //! let message = false;
-//! let security = 128;
-//! let params = bootstrapping_parameters(security);
+//! let params = Parameters::default();
 //! let (secret_key, cloud_key) = generate_keys(&params);
 //! let encrypted = encrypt(message, &secret_key);
 //! let result = boots_xor(&encrypted, &boots_constant(true, &cloud_key), &cloud_key);
@@ -25,12 +25,16 @@
 #![forbid(unsafe_code)]
 #![doc(test(attr(deny(warnings))))]
 
-pub mod bootstrap_internals;
 pub mod bootstrapping;
-pub mod lwe;
+pub mod encryption;
+pub mod gates;
 pub mod numerics;
+
+mod lwe;
 mod polynomial;
-pub mod tgsw;
-pub mod tlwe;
-pub use bootstrap_internals::tfhe_bootstrap;
-pub use bootstrapping::*;
+mod tgsw;
+mod tlwe;
+
+pub use bootstrapping::tfhe_bootstrap;
+pub use encryption::*;
+pub use gates::*;

@@ -2,7 +2,7 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
 #[cfg(feature = "bootstrapping")]
 use tfhe::{
-  bootstrapping::{bootstrapping_parameters, encrypt, generate_keys},
+  encryption::{encrypt, generate_keys, Parameters},
   numerics::encode_message,
   tfhe_bootstrap,
 };
@@ -13,8 +13,7 @@ const SAMPLE_SIZE: usize = 10;
 #[cfg(feature = "bootstrapping")]
 fn bootstrapping_benchmark(c: &mut Criterion) {
   let message = true;
-  let security = 128;
-  let params = bootstrapping_parameters(security);
+  let params = Parameters::default();
   let (secret_key, cloud_key) = generate_keys(&params);
   let s = encrypt(message, &secret_key);
 
