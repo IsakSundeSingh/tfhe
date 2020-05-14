@@ -1,31 +1,21 @@
-use tfhe::encryption::{bootstrapping_parameters, decrypt, encrypt, generate_keys};
+use tfhe::encryption::{bootstrapping_parameters, decrypt, encrypt, generate_keys, Parameters};
 use tfhe::gates::{
   boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
   boots_orny, boots_oryn, boots_xnor, boots_xor,
 };
 
 #[test]
-fn test_encrypt_decrypt_true_is_true() {
-  let message = true;
-  let security = 128;
-  let params = bootstrapping_parameters(security);
+fn test_encrypt_decrypt() {
+  let params = Parameters::default();
   let (secret_key, _cloud_key) = generate_keys(&params);
-  let encrypted = encrypt(message, &secret_key);
-  let decrypted = decrypt(&encrypted, &secret_key);
+  let every_combo = vec![true, false];
 
-  assert_eq!(message, decrypted);
-}
+  for x in every_combo {
+    let encrypted = encrypt(x, &secret_key);
+    let decrypted = decrypt(&encrypted, &secret_key);
 
-#[test]
-fn test_encrypt_decrypt_false_is_false() {
-  let message = false;
-  let security = 128;
-  let params = bootstrapping_parameters(security);
-  let (secret_key, _cloud_key) = generate_keys(&params);
-  let encrypted = encrypt(message, &secret_key);
-  let decrypted = decrypt(&encrypted, &secret_key);
-
-  assert_eq!(message, decrypted);
+    assert_eq!(x, decrypted);
+  }
 }
 
 #[test]
