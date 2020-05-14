@@ -230,7 +230,48 @@ pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Mux(a,b,c) = a?b:c */
-pub fn boots_mux(_a: &LweSample, _b: &LweSample, _c: &LweSample, _bk: &CloudKey) -> LweSample {
-  todo!()
+/// Bootstrapped MUX-gate.
+/// Essentially performs the following
+/// ```rust,no_run
+/// # let a = true;
+/// # let b = true;
+/// # let c = true;
+/// # let _ =
+/// if a {
+///   b
+/// } else {
+///   c
+/// }
+/// # ;
+/// ```
+#[allow(unused)]
+pub fn boots_mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> LweSample {
+  #[cfg(not(feature = "bootstrapping"))]
+  {
+    panic!("Mux gate cannot run without bootstrapping");
+  }
+
+  #[cfg(feature = "bootstrapping")]
+  {
+    use crate::bootstrapping::tfhe_bootstrap_without_key_switching;
+    use crate::lwe::lwe_key_switch;
+
+    const MU: Torus32 = encode_message(1, 8);
+    let in_out_params = &bk.params.in_out_params;
+    let extracted_params = &bk.params.tgsw_params.tlwe_params.extracted_lweparams;
+
+    const AND: Torus32 = encode_message(-1, 8);
+
+    // Compute AND(a,b) = (0, -1/8) + a + b
+    let temp_result = LweSample::trivial(AND, in_out_params) + a.clone() + b.clone();
+    let u1 = tfhe_bootstrap_without_key_switching(&bk.bk, MU, temp_result);
+
+    // Compute AND(NOT(a), c) = (0, -1/8) - a + c
+    let temp_result = LweSample::trivial(AND, in_out_params) - a.clone() + c.clone();
+    let u2 = tfhe_bootstrap_without_key_switching(&bk.bk, MU, temp_result);
+
+    const MUX: Torus32 = encode_message(1, 8);
+    let temp_result = LweSample::trivial(MUX, extracted_params) + u1 + u2;
+    lwe_key_switch(&bk.bk.ks, temp_result)
+  }
 }

@@ -1,9 +1,12 @@
 use tfhe::encryption::{
   decrypt, encrypt, generate_keys, generate_parameters, Parameters, SecurityLevel,
 };
-use tfhe::gates::{
-  boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not, boots_or,
-  boots_orny, boots_oryn, boots_xnor, boots_xor,
+use tfhe::{
+  boots_mux,
+  gates::{
+    boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not,
+    boots_or, boots_orny, boots_oryn, boots_xnor, boots_xor,
+  },
 };
 
 #[test]
@@ -30,6 +33,47 @@ fn test_bootstrapping_constant() {
     let bootstrapped = boots_constant(x, &cloud_key);
     let decrypted = decrypt(&bootstrapped, &secret_key);
     assert_eq!(x, decrypted);
+  }
+}
+
+#[ignore]
+#[test]
+fn test_mux_gate() {
+  // TODO: Ensure this test runs with bootstrapping enabled
+  let params = generate_parameters(SecurityLevel::Bit80);
+  let (secret_key, cloud_key) = generate_keys(&params);
+  let enc_true = encrypt(true, &secret_key);
+  let enc_false = encrypt(false, &secret_key);
+
+  let every_combo = vec![
+    (true, true, true),
+    (true, true, false),
+    (true, false, true),
+    (true, false, false),
+    (false, true, true),
+    (false, true, false),
+    (false, false, true),
+    (false, false, false),
+  ];
+
+  for (a, b, c) in every_combo {
+    let enc_a = match a {
+      true => &enc_true,
+      false => &enc_false,
+    };
+    let enc_b = match b {
+      true => &enc_true,
+      false => &enc_false,
+    };
+
+    let enc_c = match c {
+      true => &enc_true,
+      false => &enc_false,
+    };
+
+    let encrypted = boots_mux(enc_a, enc_b, enc_c, &cloud_key);
+    let decrypted = decrypt(&encrypted, &secret_key);
+    assert_eq!(decrypted, mux(a, b, c));
   }
 }
 
@@ -130,6 +174,14 @@ fn orny(a: bool, b: bool) -> bool {
 
 fn oryn(a: bool, b: bool) -> bool {
   a || (!b)
+}
+
+fn mux(a: bool, b: bool, c: bool) -> bool {
+  if a {
+    b
+  } else {
+    c
+  }
 }
 
 test_binary_gate!(test_and_gate, and, boots_and);
