@@ -7,10 +7,13 @@ use crate::{
   tgsw::TGswKey,
 };
 
+use serde::{Deserialize, Serialize};
+
 /// The bit-level security wanted from the encryption parameters.
 /// Can be used in conjunction with [`Parameters::with`](struct.Parameters.html#method.with).
 /// Represents the bit-security or bit entropy of the scheme when using the
 /// current best-known attacks.
+#[derive(Serialize, Deserialize)]
 pub enum SecurityLevel {
   /// 80-bit security
   Bit80,

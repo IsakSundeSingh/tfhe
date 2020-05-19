@@ -10,11 +10,13 @@ use crate::tgsw::{TGswKey, TGswParams, TGswSample};
 use crate::tlwe::TLweKey;
 use crate::{tlwe::TLweParameters, SecurityLevel};
 
+use serde::{Deserialize, Serialize};
+
 /// Internal ciphertext structure.
 /// The `coefficients`-vector is often large and creating new ciphertexts
 /// implies allocating a vector of 1024 or more elements, depending
 /// on the key parameters.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LweSample {
   /// The coefficients of the mask
   pub(crate) coefficients: Vec<Torus32>,
@@ -142,7 +144,7 @@ impl std::ops::Not for LweSample {
 }
 
 /// Structure for containing the encryption scheme's parameters.
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Parameters {
   pub ks_t: i32,
   pub ks_base_bit: i32,
@@ -234,7 +236,7 @@ impl Default for Parameters {
 /// without gaining access to the data.
 /// Safe for sharing as it is meant to be used by a cloud vendor
 /// or some other third-party.
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct CloudKey {
   pub(crate) params: Parameters,
   pub bk: LweBootstrappingKey,
@@ -253,6 +255,10 @@ impl CloudKey {
 
 /// Key to encrypt and decrypt data.
 /// **Not** safe to share.
+/// # Warning
+/// Although this struct is serializable it is **not** intended to be shared.
+/// It only allows serialization to enable storing the key privately.
+#[derive(Deserialize, Serialize)]
 pub struct SecretKey {
   pub(crate) params: Parameters,
   pub(crate) lwe_key: LweKey,
@@ -266,7 +272,10 @@ impl SecretKey {
 
 /// Actual key used for encryption and decryption.
 /// **Not** safe to share. Embedded within the [`SecretKey`](struct.SecretKey.html) key.
-#[derive(Debug)]
+/// **Warning**: although it implements serialization and deserialization, it is
+/// not intended to be shared, and this functionality is only implemented to
+/// store the key privately.
+#[derive(Debug, Deserialize, Serialize)]
 pub struct LweKey {
   params: LweParams,
   key: Vec<i32>,
@@ -393,7 +402,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
 //this pub structure is constant (cannot be modified once initialized):
 //the pointer to the param can be passed directly
 //to all the Lwe keys that use these params.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LweParams {
   pub(crate) n: i32,
   /// le plus petit bruit tq sur
@@ -414,7 +423,7 @@ impl LweParams {
 
 /// Key used for bootstrapping ciphertexts, safe to share.
 /// Is embedded in the [`CloudKey`](struct.CloudKey.html) key.
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct LweBootstrappingKey {
   /// paramètre de l'input et de l'output. key: s
   pub(crate) in_out_params: LweParams,
@@ -477,7 +486,7 @@ impl LweBootstrappingKey {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct LweKeySwitchKey {
   /// length of the input key: s'
   n: i32,

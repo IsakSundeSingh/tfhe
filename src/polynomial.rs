@@ -5,6 +5,7 @@
 
 use crate::numerics::{Modulo, Torus32};
 use num_traits::{int::PrimInt, Zero};
+use serde::{Deserialize, Serialize};
 
 pub(crate) trait Polynomial<T>:
   std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize, Output = T>
@@ -100,7 +101,7 @@ impl IntPolynomial {
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub(crate) struct TorusPolynomial {
   pub(crate) coefs: Vec<Torus32>,
 }

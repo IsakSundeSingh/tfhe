@@ -2,7 +2,9 @@ use crate::lwe::{LweParams, LweSample};
 use crate::numerics::{gaussian32, torus_polynomial_mul_r};
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
-#[derive(Clone, Debug, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TLweParameters {
   /// a power of 2: degree of the polynomials
   pub n: i32,
@@ -61,7 +63,7 @@ impl TLweKey {
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TLweSample {
   /// array of length k+1: mask + right term
   pub(crate) a: Vec<TorusPolynomial>,

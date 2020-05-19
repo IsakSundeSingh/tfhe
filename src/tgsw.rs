@@ -2,7 +2,9 @@ use crate::numerics::Torus32;
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use crate::tlwe::{TLweKey, TLweParameters, TLweSample};
 
-#[derive(Clone, Debug, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TGswParams {
   /// decomp length
   l: i32,
@@ -91,7 +93,7 @@ impl TGswKey {
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TGswSample {
   /// (k+1)l TLwe Sample (THIS IS A MATRIX)
   all_sample: Vec<Vec<TLweSample>>,
