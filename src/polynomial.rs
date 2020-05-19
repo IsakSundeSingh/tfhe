@@ -59,6 +59,32 @@ where
   }
 }
 
+pub(crate) fn match_and_pad_refs<T>(
+  a: &[T],
+  b: &[T],
+) -> (std::collections::VecDeque<T>, std::collections::VecDeque<T>)
+where
+  T: Default + Clone,
+{
+  let mut diff = a.len() as i32 - b.len() as i32;
+
+  let mut a_copy = std::collections::VecDeque::from(a.to_vec());
+  let mut b_copy = std::collections::VecDeque::from(b.to_vec());
+
+  let default = T::default();
+
+  while diff > 0 {
+    b_copy.push_front(default.clone());
+    diff -= 1;
+  }
+
+  while diff < 0 {
+    a_copy.push_front(default.clone());
+    diff += 1;
+  }
+  (a_copy, b_copy)
+}
+
 /// Simple function for ensuring two vectors are equal length.
 /// Pads them leftwise with `0` until they are equal.
 pub(crate) fn match_and_pad<T>(
@@ -140,6 +166,32 @@ macro_rules! impl_add {
         )
       }
     }
+
+    impl<'a, 'b> std::ops::Add<&'b $name> for &'a $name {
+      type Output = $name;
+      fn add(self, p: &'b $name) -> $name {
+        #[cfg(debug)]
+        {
+          if self.len() != p.len() {
+            println!(
+              "Adding polynomials of differing lengths!: len({}) - len({})",
+              self.len(),
+              p.len()
+            )
+          }
+        }
+
+        let (self_copy, p_copy) = match_and_pad_refs(&self.coefs, &p.coefs);
+
+        $name::from(
+          self_copy
+            .iter()
+            .zip(p_copy.iter())
+            .map(|(a, b)| a + b)
+            .collect::<Vec<_>>(),
+        )
+      }
+    }
   };
 }
 macro_rules! impl_sub {
@@ -165,6 +217,32 @@ macro_rules! impl_sub {
           .map(|(a, b)| a - b)
           .collect::<Vec<_>>();
         Self::from(vals)
+      }
+    }
+
+    impl<'a, 'b> std::ops::Sub<&'b $name> for &'a $name {
+      type Output = $name;
+      fn sub(self, p: &'b $name) -> $name {
+        #[cfg(debug)]
+        {
+          if self.len() != p.len() {
+            println!(
+              "Subtracting polynomials of differing lengths!: len({}) - len({})",
+              self.len(),
+              p.len()
+            )
+          }
+        }
+
+        let (self_copy, p_copy) = match_and_pad_refs(&self.coefs, &p.coefs);
+
+        $name::from(
+          self_copy
+            .iter()
+            .zip(p_copy.iter())
+            .map(|(a, b)| a - b)
+            .collect::<Vec<_>>(),
+        )
       }
     }
   };

@@ -177,6 +177,22 @@ impl TLweSample {
   }
 }
 
+impl<'a, 'b> std::ops::Add<&'b TLweSample> for &'a TLweSample {
+  type Output = TLweSample;
+  fn add(self, sample: &'b TLweSample) -> TLweSample {
+    TLweSample {
+      a: self
+        .a
+        .iter()
+        .zip(sample.a.iter())
+        .map(|(a, b)| a + b)
+        .collect(),
+      current_variance: self.current_variance + sample.current_variance,
+      ..*self
+    }
+  }
+}
+
 impl std::ops::Add<TLweSample> for TLweSample {
   type Output = Self;
   fn add(self, sample: Self) -> Self {
@@ -202,6 +218,40 @@ impl std::ops::Sub<TLweSample> for TLweSample {
         .a
         .into_iter()
         .zip(sample.a.into_iter())
+        .map(|(a, b)| a - b)
+        .collect(),
+      current_variance: self.current_variance + sample.current_variance,
+      ..self
+    }
+  }
+}
+
+impl<'a, 'b> std::ops::Sub<&'b TLweSample> for &'a TLweSample {
+  type Output = TLweSample;
+  #[allow(clippy::suspicious_arithmetic_impl)]
+  fn sub(self, sample: &'b TLweSample) -> TLweSample {
+    TLweSample {
+      a: self
+        .a
+        .iter()
+        .zip(sample.a.iter())
+        .map(|(a, b)| a - b)
+        .collect(),
+      current_variance: self.current_variance + sample.current_variance,
+      ..*self
+    }
+  }
+}
+
+impl<'a> std::ops::Sub<&'a TLweSample> for TLweSample {
+  type Output = TLweSample;
+  #[allow(clippy::suspicious_arithmetic_impl)]
+  fn sub(self, sample: &'a TLweSample) -> TLweSample {
+    TLweSample {
+      a: self
+        .a
+        .iter()
+        .zip(sample.a.iter())
         .map(|(a, b)| a - b)
         .collect(),
       current_variance: self.current_variance + sample.current_variance,

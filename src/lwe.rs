@@ -69,6 +69,62 @@ impl std::ops::Add<LweSample> for LweSample {
   }
 }
 
+impl<'a, 'b> std::ops::Add<&'b LweSample> for &'a LweSample {
+  type Output = LweSample;
+  fn add(self, rhs: &'b LweSample) -> LweSample {
+    debug_assert_eq!(
+      self.coefficients.len(),
+      rhs.coefficients.len(),
+      "Cannot add samples with different sizes! lhs.len() = {}, rhs.len() = {}",
+      self.coefficients.len(),
+      rhs.coefficients.len()
+    );
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(&rhs.coefficients)
+      .map(|(a, b)| a.wrapping_add(*b))
+      .collect();
+
+    let b = self.b.wrapping_add(rhs.b);
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    LweSample {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+}
+
+impl<'a> std::ops::Add<&'a LweSample> for LweSample {
+  type Output = LweSample;
+  fn add(self, rhs: &'a LweSample) -> LweSample {
+    debug_assert_eq!(
+      self.coefficients.len(),
+      rhs.coefficients.len(),
+      "Cannot add samples with different sizes! lhs.len() = {}, rhs.len() = {}",
+      self.coefficients.len(),
+      rhs.coefficients.len()
+    );
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(&rhs.coefficients)
+      .map(|(a, b)| a.wrapping_add(*b))
+      .collect();
+
+    let b = self.b.wrapping_add(rhs.b);
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    LweSample {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+}
+
 impl std::ops::Sub<LweSample> for LweSample {
   type Output = Self;
   fn sub(self, rhs: LweSample) -> LweSample {
@@ -86,6 +142,54 @@ impl std::ops::Sub<LweSample> for LweSample {
     let current_variance = self.current_variance + rhs.current_variance;
 
     Self {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+}
+
+impl<'a, 'b> std::ops::Sub<&'b LweSample> for &'a LweSample {
+  type Output = LweSample;
+  fn sub(self, rhs: &'b LweSample) -> LweSample {
+    debug_assert_eq!(self.coefficients.len(), rhs.coefficients.len());
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(&rhs.coefficients)
+      .map(|(a, b)| a.wrapping_sub(*b))
+      .collect();
+
+    let b = self.b.wrapping_sub(rhs.b);
+
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    LweSample {
+      coefficients,
+      b,
+      current_variance,
+    }
+  }
+}
+
+impl<'a> std::ops::Sub<&'a LweSample> for LweSample {
+  type Output = LweSample;
+  fn sub(self, rhs: &'a LweSample) -> LweSample {
+    debug_assert_eq!(self.coefficients.len(), rhs.coefficients.len());
+    let coefficients = self
+      .coefficients
+      .iter()
+      .zip(&rhs.coefficients)
+      .map(|(a, b)| a.wrapping_sub(*b))
+      .collect();
+
+    let b = self.b.wrapping_sub(rhs.b);
+
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    let current_variance = self.current_variance + rhs.current_variance;
+
+    LweSample {
       coefficients,
       b,
       current_variance,
@@ -118,9 +222,34 @@ impl std::ops::Mul<i32> for LweSample {
   }
 }
 
+impl<'a> std::ops::Mul<i32> for &'a LweSample {
+  type Output = LweSample;
+  fn mul(self, p: i32) -> LweSample {
+    let LweSample {
+      coefficients,
+      b,
+      current_variance,
+    } = self;
+
+    // Overflowed here, using wrapping mul to imitate C++ behavior
+    LweSample {
+      coefficients: coefficients.iter().map(|c| c.wrapping_mul(p)).collect(),
+      b: b.wrapping_mul(p),
+      current_variance: (p * p) as f64 * current_variance,
+    }
+  }
+}
+
 impl std::ops::Mul<LweSample> for i32 {
   type Output = LweSample;
   fn mul(self, p: LweSample) -> Self::Output {
+    p * self
+  }
+}
+
+impl<'a> std::ops::Mul<&'a LweSample> for i32 {
+  type Output = LweSample;
+  fn mul(self, p: &'a LweSample) -> Self::Output {
     p * self
   }
 }
@@ -137,6 +266,22 @@ impl std::ops::Not for LweSample {
       coefficients: coefficients.iter().map(std::ops::Neg::neg).collect(),
       b: -b,
       current_variance,
+    }
+  }
+}
+
+impl<'a> std::ops::Not for &'a LweSample {
+  type Output = LweSample;
+  fn not(self) -> LweSample {
+    let LweSample {
+      coefficients,
+      b,
+      current_variance,
+    } = self;
+    LweSample {
+      coefficients: coefficients.iter().map(std::ops::Neg::neg).collect(),
+      b: -b,
+      current_variance: *current_variance,
     }
   }
 }

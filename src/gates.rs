@@ -45,11 +45,11 @@ pub fn boots_nand(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca - cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result - ca.clone() - cb.clone()
+    temp_result - ca - cb
   }
 }
 
@@ -65,11 +65,11 @@ pub fn boots_or(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca + cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result + ca.clone() + cb.clone()
+    temp_result + ca + cb
   }
 }
 
@@ -84,11 +84,11 @@ pub fn boots_and(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() + cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca + cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result + ca.clone() + cb.clone()
+    temp_result + ca + cb
   }
 }
 
@@ -103,11 +103,11 @@ pub fn boots_xor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result + 2 * ca.clone() + 2 * cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result + 2 * ca + 2 * cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result + 2 * ca.clone() + 2 * cb.clone()
+    temp_result + 2 * ca + 2 * cb
   }
 }
 
@@ -123,17 +123,17 @@ pub fn boots_xnor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result - 2 * ca.clone() - 2 * cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result - 2 * ca - 2 * cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result - 2 * ca.clone() - 2 * cb.clone()
+    temp_result - 2 * ca - 2 * cb
   }
 }
 
 /** bootstrapped Not Gate: result = not(a) */
 pub fn boots_not(ca: &LweSample, _bk: &CloudKey) -> LweSample {
-  !ca.clone()
+  !ca
 }
 
 /** bootstrapped Nor Gate: result = not(a or b) */
@@ -147,11 +147,11 @@ pub fn boots_nor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(-1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() - cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca - cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result - ca.clone() - cb.clone()
+    temp_result - ca - cb
   }
 }
 
@@ -165,11 +165,11 @@ pub fn boots_andny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca + cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result - ca.clone() + cb.clone()
+    temp_result - ca + cb
   }
 }
 
@@ -184,11 +184,11 @@ pub fn boots_andyn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca - cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result + ca.clone() - cb.clone()
+    temp_result + ca - cb
   }
 }
 
@@ -203,11 +203,11 @@ pub fn boots_orny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result - ca.clone() + cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result - ca + cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result - ca.clone() + cb.clone()
+    temp_result - ca + cb
   }
 }
 
@@ -222,11 +222,11 @@ pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(feature = "bootstrapping")]
   {
     const MU: Torus32 = encode_message(1, 8);
-    tfhe_bootstrap(&bk.bk, MU, temp_result + ca.clone() - cb.clone())
+    tfhe_bootstrap(&bk.bk, MU, temp_result + ca - cb)
   }
   #[cfg(not(feature = "bootstrapping"))]
   {
-    temp_result + ca.clone() - cb.clone()
+    temp_result + ca - cb
   }
 }
 
@@ -263,11 +263,11 @@ pub fn boots_mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> 
     const AND: Torus32 = encode_message(-1, 8);
 
     // Compute AND(a,b) = (0, -1/8) + a + b
-    let temp_result = LweSample::trivial(AND, in_out_params) + a.clone() + b.clone();
+    let temp_result = LweSample::trivial(AND, in_out_params) + a + b;
     let u1 = tfhe_bootstrap_without_key_switching(&bk.bk, MU, temp_result);
 
     // Compute AND(NOT(a), c) = (0, -1/8) - a + c
-    let temp_result = LweSample::trivial(AND, in_out_params) - a.clone() + c.clone();
+    let temp_result = LweSample::trivial(AND, in_out_params) - a + c;
     let u2 = tfhe_bootstrap_without_key_switching(&bk.bk, MU, temp_result);
 
     const MUX: Torus32 = encode_message(1, 8);
