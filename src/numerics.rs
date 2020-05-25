@@ -120,7 +120,7 @@ pub const fn encode_message(mu: i32, message_space: i32) -> Torus32 {
 /// in a space with `message_space` possible elements.
 /// # Panics
 /// Panics if the `message_space` isn't a power of 2.
-pub(crate) fn decode_message(phase: Torus32, message_space: i32) -> i32 {
+pub fn decode_message(phase: Torus32, message_space: i32) -> i32 {
   assert!(is_power_of_2(message_space as i32));
   let log2 = message_space.trailing_zeros();
   (phase.wrapping_add(1 << (32 - log2 - 1))) >> (32 - log2)
