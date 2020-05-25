@@ -26,6 +26,7 @@
 #![doc(test(attr(deny(warnings))))]
 
 pub mod bootstrapping;
+pub mod circuits;
 pub mod encryption;
 pub mod gates;
 pub mod numerics;
