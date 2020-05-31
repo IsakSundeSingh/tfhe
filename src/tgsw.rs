@@ -2,6 +2,7 @@ use crate::numerics::Torus32;
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 use crate::tlwe::{TLweKey, TLweParameters, TLweSample};
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -202,7 +203,7 @@ impl TGswSample {
         println!("target coefs befor: {:?}", target);
         target
           .iter_mut()
-          .zip(mu.iter())
+          .zip_eq(mu.iter())
           .for_each(|(t, mu)| *t += mu * h[i]);
         println!("target coefs after: {:?}", target);
 
@@ -245,7 +246,7 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
 
   dec
     .iter()
-    .zip(sample.all_sample.iter())
+    .zip_eq(sample.all_sample.iter())
     .for_each(|(d, a)| result.add_mul_r_(&d[0], &a[0], par));
 
   result
@@ -432,8 +433,8 @@ mod tests {
               new_polynomial
                 .coefs
                 .iter()
-                .zip(old_polynomial.coefs.iter())
-                .zip(message.coefs.iter())
+                .zip_eq(old_polynomial.coefs.iter())
+                .zip_eq(message.coefs.iter())
                 .for_each(|((n, o), m)| assert_eq!(*n, *o + h[i] * (dbg!(*m))));
             // for jj in 0..n as usize {
             //   assert_eq!(
@@ -445,7 +446,7 @@ mod tests {
               assert!(new_polynomial
                 .coefs
                 .iter()
-                .zip(old_polynomial.coefs.iter())
+                .zip_eq(old_polynomial.coefs.iter())
                 .all(|(a, b)| a == b));
             }
             assert_eq!(

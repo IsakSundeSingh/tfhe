@@ -10,6 +10,7 @@ use crate::tgsw::{TGswKey, TGswParams, TGswSample};
 use crate::tlwe::TLweKey;
 use crate::{tlwe::TLweParameters, SecurityLevel};
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 /// Internal ciphertext structure.
@@ -56,7 +57,7 @@ impl std::ops::Add<LweSample> for LweSample {
     let coefficients = self
       .coefficients
       .iter()
-      .zip(rhs.coefficients)
+      .zip_eq(rhs.coefficients)
       .map(|(a, b)| a.wrapping_add(b))
       .collect();
 
@@ -78,7 +79,7 @@ impl std::ops::Sub<LweSample> for LweSample {
     let coefficients = self
       .coefficients
       .iter()
-      .zip(rhs.coefficients)
+      .zip_eq(rhs.coefficients)
       .map(|(a, b)| a.wrapping_sub(b))
       .collect();
 
@@ -316,7 +317,7 @@ impl LweKey {
     let values: Wrapping<i32> = result
       .coefficients
       .iter()
-      .zip(self.key.iter())
+      .zip_eq(self.key.iter())
       .map(|(a, b)| Wrapping(a * b))
       .sum();
     result.b = result.b.wrapping_add(values.0);
@@ -343,7 +344,7 @@ impl LweKey {
     let values: Wrapping<i32> = result
       .coefficients
       .iter()
-      .zip(self.key.iter())
+      .zip_eq(self.key.iter())
       .map(|(a, b)| Wrapping(a * b))
       .sum();
     result.b = result.b.wrapping_add(values.0);
@@ -389,7 +390,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   debug_assert_eq!(a.len(), k.len());
   let axs: Torus32 = a
     .iter()
-    .zip(k.iter())
+    .zip_eq(k.iter())
     .map(|(a, k)| Wrapping(a * k))
     .sum::<Wrapping<i32>>()
     .0;
@@ -758,7 +759,7 @@ mod tests {
       let coefficients = sample1
         .coefficients
         .iter()
-        .zip(sample2.coefficients)
+        .zip_eq(sample2.coefficients)
         .map(|(a, b)| a.wrapping_add(b))
         .collect();
       let b = sample1.b.wrapping_add(sample2.b);
@@ -787,7 +788,7 @@ mod tests {
       let coefficients = sample1
         .coefficients
         .iter()
-        .zip(sample2.coefficients)
+        .zip_eq(sample2.coefficients)
         .map(|(a, b)| a.wrapping_sub(b))
         .collect();
       let b = sample1.b.wrapping_sub(sample2.b);

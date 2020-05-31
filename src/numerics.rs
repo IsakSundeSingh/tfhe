@@ -4,6 +4,8 @@
 
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
+use itertools::Itertools;
+
 /// An element `x : Modulo` of the real torus is represented by the integer
 /// `(2^32 * x).modulo(2^32)`, where addition, subtraction and integer
 /// operations are native. Modulo 1 is mapped to modulo [2^32](constant.TWO_32.html),
@@ -142,7 +144,7 @@ pub(crate) fn torus_polynomial_mul_r(
   result.coefs = result
     .coefs
     .iter()
-    .zip(res.coefs.iter())
+    .zip_eq(res.coefs.iter())
     .map(|(a, b)| a + b)
     .collect();
 }
@@ -233,7 +235,7 @@ where
 
   let mut r: Vec<_> = p_out
     .into_iter()
-    .zip(q_out.into_iter())
+    .zip_eq(q_out.into_iter())
     .map(|(p_c, q_c)| (p_c / (p.len() as f64).sqrt()) * (q_c / (q.len() as f64).sqrt()))
     .collect();
 

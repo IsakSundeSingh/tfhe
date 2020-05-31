@@ -1,6 +1,7 @@
 //! Contains commonly-used circuits.
 
 use crate::{boots_and, boots_constant, boots_mux, boots_xor, CloudKey, LweSample};
+use itertools::Itertools;
 
 /// Comparison gate.
 /// Compares two ciphertexts using greater than or equal to-comparison.
@@ -29,7 +30,7 @@ pub fn eq(a: &[LweSample], b: &[LweSample], key: &CloudKey) -> LweSample {
   assert_eq!(a.len(), b.len());
 
   let mut bits = vec![];
-  for (bit_a, bit_b) in a.iter().zip(b.iter()) {
+  for (bit_a, bit_b) in a.iter().zip_eq(b.iter()) {
     bits.push(eq_bit(bit_a, bit_b, key));
   }
 

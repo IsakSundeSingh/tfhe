@@ -4,6 +4,7 @@
 //! and is used throughout the crate.
 
 use crate::numerics::{Modulo, Torus32};
+use itertools::Itertools;
 use num_traits::{int::PrimInt, Zero};
 use serde::{Deserialize, Serialize};
 
@@ -135,7 +136,7 @@ macro_rules! impl_add {
         Self::from(
           self_copy
             .iter()
-            .zip(p_copy.iter())
+            .zip_eq(p_copy.iter())
             .map(|(a, b)| a + b)
             .collect::<Vec<_>>(),
         )
@@ -162,7 +163,7 @@ macro_rules! impl_sub {
         let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
         let vals = self_copy
           .iter()
-          .zip(p_copy.iter())
+          .zip_eq(p_copy.iter())
           .map(|(a, b)| a - b)
           .collect::<Vec<_>>();
         Self::from(vals)

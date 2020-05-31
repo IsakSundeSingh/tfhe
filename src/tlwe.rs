@@ -2,6 +2,7 @@ use crate::lwe::{LweParams, LweSample};
 use crate::numerics::{gaussian32, torus_polynomial_mul_r};
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -46,7 +47,7 @@ impl TLweKey {
     let mut rng = rand::thread_rng();
 
     // Fill key with random integers
-    let key: Vec<IntPolynomial> = (0..k)
+    let key: Vec<IntPolynomial> = (0..=k)
       .map(|_| {
         IntPolynomial::from(
           (0..n)
@@ -121,7 +122,7 @@ impl TLweSample {
     let poly_sum = key
       .key
       .iter()
-      .zip(self.a.iter())
+      .zip_eq(self.a.iter().take((k + 1) as usize))
       .map(|(a, b)| crate::numerics::poly_multiplier(a, b))
       .fold(TorusPolynomial::zero(n as usize), |acc, p| acc + p);
 
@@ -186,7 +187,7 @@ impl std::ops::Add<TLweSample> for TLweSample {
       a: self
         .a
         .into_iter()
-        .zip(sample.a.into_iter())
+        .zip_eq(sample.a.into_iter())
         .map(|(a, b)| a + b)
         .collect(),
       current_variance: self.current_variance + sample.current_variance,
@@ -203,7 +204,7 @@ impl std::ops::Sub<TLweSample> for TLweSample {
       a: self
         .a
         .into_iter()
-        .zip(sample.a.into_iter())
+        .zip_eq(sample.a.into_iter())
         .map(|(a, b)| a - b)
         .collect(),
       current_variance: self.current_variance + sample.current_variance,
