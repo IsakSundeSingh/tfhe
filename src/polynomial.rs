@@ -280,7 +280,7 @@ fn uniform(n: usize) -> Vec<i32> {
 /// a modulo `2 * N` will be taken.
 pub(crate) fn mul_by_monomial<P>(p: P, power: i32) -> P
 where
-  P: Polynomial<i32> + std::ops::Index<usize, Output = i32>,
+  P: Polynomial<i32>,
 {
   if power == 0 {
     return p;
