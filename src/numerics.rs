@@ -187,7 +187,7 @@ where
   use rustfft::num_complex::Complex;
   use rustfft::FFTplanner;
 
-  let degree = a.len() + b.len() - 2;
+  let degree = a.degree() + b.degree();
   let mut p: Vec<_> = a
     .iter()
     .rev()

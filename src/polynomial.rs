@@ -38,9 +38,9 @@ where
     self.coefs().len()
   }
 
-  /// Determines the degree of the polynomial. Should equal the number of elements.
+  /// Determines the degree of the polynomial. Should equal the number of elements minus 1.
   fn degree(&self) -> usize {
-    self.len()
+    self.len() - 1
   }
 
   /// Euclidean norm, squared
