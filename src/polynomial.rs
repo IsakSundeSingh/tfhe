@@ -9,7 +9,7 @@ use num_traits::{int::PrimInt, Zero};
 use serde::{Deserialize, Serialize};
 
 pub(crate) trait Polynomial<T>:
-  std::ops::Add<Self> + std::ops::Mul<Self> + std::ops::Index<usize, Output = T>
+  std::ops::Add<Self> + std::ops::Sub<Self> + std::ops::Mul<Self> + std::ops::Index<usize, Output = T>
 where
   Self: Sized,
 {
@@ -33,7 +33,7 @@ where
   /// Initialize a polynomial of size `n` where all values are zero.
   fn zero(n: usize) -> Self;
 
-  /// Determines the number of elements in the polynomial. Should be equal to its degree.
+  /// Determines the number of elements in the polynomial. Should be equal to its degree + 1.
   fn len(&self) -> usize {
     self.coefs().len()
   }
