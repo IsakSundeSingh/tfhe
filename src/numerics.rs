@@ -139,12 +139,16 @@ pub(crate) fn torus_polynomial_mul_r(
   poly1: &IntPolynomial,
   poly2: &TorusPolynomial,
 ) {
-  let res = poly_multiplier(poly1, poly2);
-  debug_assert_eq!(result.coefs.len(), res.coefs.len());
+  // Polynomial multiplication results in a polynomial with degree equal to the sum of the two polynomials' degrees.
+  // This means res has len `poly1.degree() + poly2.degree() + 1`.
+  let product = poly_multiplier(poly1, poly2);
+
   result.coefs = result
     .coefs
     .iter()
-    .zip_eq(res.coefs.iter())
+    // Original library uses the same size as the first polynomial for the result,
+    // (ignoring all terms lower than (after) the `poly1.len()`-th element. Why?)
+    .zip_eq(product.coefs.iter().take(poly1.len()))
     .map(|(a, b)| a + b)
     .collect();
 }
@@ -160,7 +164,7 @@ where
   P2: Polynomial<i32>,
 {
   let (a_coefs, b_coefs) = crate::polynomial::match_and_pad(a.coefs().to_vec(), b.coefs().to_vec());
-  let degree = a.len() + b.len() - 2;
+  let degree = a.degree() + b.degree();
   let mut coefs = vec![0; a_coefs.len() + b_coefs.len() + 1];
 
   for i in 0..a.coefs().len() {
@@ -497,5 +501,14 @@ mod tests {
 
     let res = poly_multiplier(&a, &b);
     assert_eq!(res, TorusPolynomial::from(vec![10, 40, 100, 120, 90]));
+  }
+
+  #[test]
+  fn test_poly_multiplier_degree() {
+    let a = IntPolynomial::from(vec![0; 1024]);
+    let b = a.clone();
+    let res = poly_multiplier(&a, &b);
+    assert_eq!(res.degree(), 2046);
+    assert_eq!(res.len(), 2047);
   }
 }
