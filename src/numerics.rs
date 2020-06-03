@@ -25,7 +25,7 @@ pub(crate) trait Modulo<RHS = Self> {
   fn modulo(&self, rhs: RHS) -> Self::Output;
 }
 
-impl<T: num_traits::PrimInt + num_traits::Signed> Modulo<T> for T {
+impl<T: num::PrimInt + num::Signed> Modulo<T> for T {
   type Output = T;
   fn modulo(&self, rhs: T) -> Self::Output {
     let r = *self % rhs;
@@ -181,13 +181,15 @@ where
 /// Efficient -> `O(n log n)`
 #[cfg(feature = "fft")]
 #[allow(clippy::many_single_char_names)]
-pub(crate) fn poly_multiplier<P1, P2>(a: &P1, b: &P2) -> TorusPolynomial
+pub(crate) fn poly_multiplier<T, P1, P2>(a: &P1, b: &P2) -> P1
 where
-  P1: Polynomial<i32>,
-  P2: Polynomial<i32>,
+  P1: Polynomial<T>,
+  P2: Polynomial<T>,
+  f64: std::convert::From<T>,
+  P1: std::convert::From<Vec<i32>>,
 {
   // Algorithm found at https://math.stackexchange.com/questions/764727/concrete-fft-polynomial-multiplication-example
-  use num_traits::Zero;
+  use num::traits::Zero;
   use rustfft::num_complex::Complex;
   use rustfft::FFTplanner;
 
@@ -222,14 +224,14 @@ where
   if power != q.len() {
     // Extend the polynomial to a power of 2 length
     q.extend(
-      std::iter::repeat(num_traits::identities::Zero::zero())
+      std::iter::repeat(num::traits::Zero::zero())
         .take(power - q.len())
         .collect::<Vec<Complex<f64>>>(),
     );
   }
 
-  let mut p_out = vec![num_traits::identities::Zero::zero(); p.len()];
-  let mut q_out = vec![num_traits::identities::Zero::zero(); q.len()];
+  let mut p_out = vec![num::traits::Zero::zero(); p.len()];
+  let mut q_out = vec![num::traits::Zero::zero(); q.len()];
 
   // Create a FFT planner for a FFT
   let mut planner = FFTplanner::new(false);
@@ -243,7 +245,7 @@ where
     .map(|(p_c, q_c)| (p_c / (p.len() as f64).sqrt()) * (q_c / (q.len() as f64).sqrt()))
     .collect();
 
-  let mut res = vec![num_traits::identities::Zero::zero(); r.len()];
+  let mut res = vec![num::traits::Zero::zero(); r.len()];
 
   // Create a FFT planner for the inverse FFT
   let fft = FFTplanner::new(true).plan_fft(r.len());
@@ -256,7 +258,7 @@ where
     .rev()
     .collect();
 
-  TorusPolynomial::from(&coefs)
+  P1::from(coefs)
 }
 
 /// X^{a} * source

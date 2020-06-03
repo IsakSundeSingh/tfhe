@@ -5,9 +5,8 @@
 
 use crate::numerics::{Modulo, Torus32};
 use itertools::Itertools;
-use num_traits::{int::PrimInt, Zero};
+use num::traits::{int::PrimInt, Zero};
 use serde::{Deserialize, Serialize};
-
 pub(crate) trait Polynomial<T>:
   std::ops::Add<Self> + std::ops::Sub<Self> + std::ops::Mul<Self> + std::ops::Index<usize, Output = T>
 where
@@ -115,6 +114,25 @@ impl TorusPolynomial {
   }
 }
 
+/// Represents a polynomial in Lagrange space.
+///
+/// Elements are in the complex plane, and are represented as the
+/// roots of unity `exp(i * (2j + 1) * π) / N`, where j ∈ [0, N / 2).
+/// The `N / 2` other evaluations are conjugates of the first, meaning we
+/// can get away with storing only half.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LagrangePolynomial {
+  pub(crate) coefs: Vec<num::Complex<f64>>,
+}
+
+impl LagrangePolynomial {
+  pub(crate) fn new(n: i32) -> Self {
+    Self {
+      coefs: vec![Zero::zero(); n as usize],
+    }
+  }
+}
+
 macro_rules! impl_add {
   ($name: ident) => {
     impl std::ops::Add<$name> for $name {
@@ -206,7 +224,7 @@ macro_rules! impl_polynomial {
       }
 
       fn zero(n: usize) -> Self {
-        Self::from(vec![0; n])
+        Self::from(vec![Zero::zero(); n])
       }
     }
   };
@@ -254,25 +272,33 @@ macro_rules! impl_index {
 
 impl_add!(IntPolynomial);
 impl_add!(TorusPolynomial);
+impl_add!(LagrangePolynomial);
 impl_sub!(IntPolynomial);
 impl_sub!(TorusPolynomial);
+impl_sub!(LagrangePolynomial);
 impl_mul!(IntPolynomial);
 impl_mul!(TorusPolynomial);
+impl_mul!(LagrangePolynomial);
 impl_from!(IntPolynomial, i32);
 impl_from!(TorusPolynomial, i32);
+impl_from!(LagrangePolynomial, num::Complex<f64>);
 impl_from_poly!(TorusPolynomial, IntPolynomial);
 impl_from_poly!(IntPolynomial, TorusPolynomial);
 impl_index!(IntPolynomial, i32);
 impl_index!(TorusPolynomial, i32);
+impl_index!(LagrangePolynomial, num::Complex<f64>);
 impl_polynomial!(IntPolynomial, i32);
 impl_polynomial!(TorusPolynomial, i32);
+impl_polynomial!(LagrangePolynomial, num::Complex<f64>);
 
 /// Generates a vector of length `n` of `i32`s with uniform distribution
-fn uniform(n: usize) -> Vec<i32> {
+fn uniform<T>(n: usize) -> Vec<T> {
   use rand::Rng;
-  let mut values = vec![0; n];
-  rand::thread_rng().fill(&mut values[..]);
-  values
+  let mut rng = rand::thread_rng();
+  (0..n).map(|_| rng.gen()).collect()
+  // let mut values = vec![T::default(); n];
+  // rand::thread_rng().fill(&mut values[..]);
+  // values
 }
 
 /// Multiply the polynomial by `x^power`.
