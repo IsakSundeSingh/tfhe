@@ -38,3 +38,4 @@ harness = false
 [[bench]]
 name = "bootstrapping"
 harness = false
+required-features = ["bootstrapping"]

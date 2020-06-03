@@ -1,16 +1,12 @@
-#[cfg(feature = "bootstrapping")]
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
-#[cfg(feature = "bootstrapping")]
 use tfhe::{
   encryption::{encrypt, generate_keys, Parameters},
   numerics::encode_message,
   tfhe_bootstrap, SecurityLevel,
 };
 
-#[cfg(feature = "bootstrapping")]
 const SAMPLE_SIZE: usize = 10;
 
-#[cfg(feature = "bootstrapping")]
 fn bootstrapping_benchmark(c: &mut Criterion) {
   let message = true;
   let params = Parameters::with(SecurityLevel::Bit80);
@@ -28,16 +24,10 @@ fn bootstrapping_benchmark(c: &mut Criterion) {
   });
 }
 
-#[cfg(feature = "bootstrapping")]
 criterion_group!(
   name = benches;
   config = Criterion::default().sample_size(SAMPLE_SIZE).measurement_time(std::time::Duration::from_secs(50));
   targets = bootstrapping_benchmark
 );
-#[cfg(feature = "bootstrapping")]
-criterion_main!(benches);
 
-#[cfg(not(feature = "bootstrapping"))]
-fn main() {
-  println!("Warning, running bootstrapping benchmark without the bootstrapping feature flag. Returning without doing anything.")
-}
+criterion_main!(benches);
