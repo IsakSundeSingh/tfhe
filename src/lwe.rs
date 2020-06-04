@@ -97,9 +97,16 @@ impl std::ops::Sub<LweSample> for LweSample {
 }
 
 impl std::ops::SubAssign for LweSample {
+  #[allow(clippy::suspicious_op_assign_impl)]
   fn sub_assign(&mut self, sample: LweSample) {
-    // Todo: Fix unnecessary clone here
-    *self = self.clone() - sample;
+    self
+      .coefficients
+      .iter_mut()
+      .zip_eq(sample.coefficients.into_iter())
+      .for_each(|(a_i, x): (&mut Torus32, Torus32)| *a_i = (*a_i).wrapping_sub(x));
+    self.b = self.b.wrapping_sub(sample.b);
+
+    self.current_variance += sample.current_variance;
   }
 }
 
