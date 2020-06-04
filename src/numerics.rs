@@ -173,7 +173,12 @@ where
     }
   }
 
-  TorusPolynomial::from(coefs.into_iter().skip(a_coefs.len() - degree))
+  TorusPolynomial::from(
+    coefs
+      .into_iter()
+      .skip(a_coefs.len() - degree)
+      .collect::<Vec<_>>(),
+  )
 }
 
 /// Multiplies two polynomials using FFT
