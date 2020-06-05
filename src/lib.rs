@@ -7,9 +7,9 @@
 //! Additionally, it does not have the same performance characteristics as the original library.
 //!
 //! # Example use
-//! The following is an example of encrypting a single bit (represented as a `bool`), performing the `xor` (`^`) operator on it and a publicly known constant `true`, while the ciphertext is encrypted.:
+//! The following is an example of encrypting a single bit (represented as a `bool`), performing the `xor` (`^`) operator on it and a publicly known constant `true`, while the ciphertext is encrypted:
 //! ```rust
-//! use tfhe::encryption::{Parameters, decrypt, encrypt, generate_keys};
+//! use tfhe::encryption::{decrypt, encrypt, generate_keys, Parameters};
 //! use tfhe::gates::{boots_constant, boots_xor};
 //! let message = false;
 //! let params = Parameters::default(); // 128-bit security

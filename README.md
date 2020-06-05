@@ -37,6 +37,16 @@ Optionally, the following features can be enabled:
 
 - `bootstrapping` enables gate-bootstrapping, so that the bootstrapping procedure is performed after each gate. A user may wish to have this disabled to use circuit bootstrapping manually.
 
+## Testing
+
+Tests can be run using `cargo test`.
+
+## Benchmarking
+
+Benchmarks can be run using `cargo bench`.
+
+Some benchmarks require specific features to be enabled. Required features are found in [`Cargo.toml`](Cargo.toml) under each specific benchmark's section, `[[bench]]`.
+
 ## Disclaimer
 
 It is a very rough port and not all of the code is idiomatic Rust. Few of the optimizations of the original library are implemented, such as FFT on Lagrange complex polynomials, however may be added in the future.
