@@ -125,7 +125,7 @@ pub(crate) fn tfhe_blind_rotate(
       continue;
     }
 
-    temp = tfhe_mux_rotate(&temp.clone(), &temp2, &bk[i], barai, bk_params);
+    temp = tfhe_mux_rotate(temp, &temp2, &bk[i], barai, bk_params);
     std::mem::swap(&mut temp, &mut temp2);
   }
 
@@ -134,14 +134,14 @@ pub(crate) fn tfhe_blind_rotate(
 }
 
 fn tfhe_mux_rotate(
-  result: &TLweSample,
+  result: TLweSample,
   accum: &TLweSample,
   bki: &TGswSample,
   barai: i32,
   bk_params: &TGswParams,
 ) -> TLweSample {
   // accum + BK_i * [(X^bar{a}_i-1) * accum]
-  let temp = crate::tlwe::mul_by_monomial(result.clone() + accum.clone(), barai) - accum.clone();
+  let temp = crate::tlwe::mul_by_monomial(result + accum.clone(), barai) - accum.clone();
   accum.clone() + tgsw_extern_mul_to_tlwe(&temp, bki, bk_params)
 }
 
