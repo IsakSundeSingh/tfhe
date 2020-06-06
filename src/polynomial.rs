@@ -135,9 +135,9 @@ macro_rules! impl_add {
 
         Self::from(
           self_copy
-            .iter()
-            .zip_eq(p_copy.iter())
-            .map(|(a, b)| a + b)
+            .into_iter()
+            .zip_eq(p_copy.into_iter())
+            .map(|(a, b)| a.wrapping_add(b))
             .collect::<Vec<_>>(),
         )
       }
@@ -162,9 +162,9 @@ macro_rules! impl_sub {
 
         let (self_copy, p_copy) = match_and_pad(self.coefs, p.coefs);
         let vals = self_copy
-          .iter()
-          .zip_eq(p_copy.iter())
-          .map(|(a, b)| a - b)
+          .into_iter()
+          .zip_eq(p_copy.into_iter())
+          .map(|(a, b)| a.wrapping_sub(b))
           .collect::<Vec<_>>();
         Self::from(vals)
       }

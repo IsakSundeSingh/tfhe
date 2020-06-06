@@ -233,7 +233,6 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
 ) -> TLweSample {
   let par = &params.tlwe_params;
 
-  let dec = tgsw_tlwe_decomposition_h(accum, params);
   let mut result = TLweSample {
     a: accum
       .a
@@ -244,10 +243,24 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
     k: accum.k,
   };
 
+  let mut dec = tgsw_tlwe_decomposition_h(accum, params);
+  let outer = dec.len();
+  let inner = dec[0].len();
+  let mut new_dec = vec![vec![IntPolynomial::zero(0); outer]; inner];
+  #[allow(clippy::needless_range_loop)]
+  for x in 0..inner {
+    for y in 0..outer {
+      std::mem::swap(&mut new_dec[x][y], &mut dec[y][x]);
+    }
+  }
+
+  let dec = new_dec;
+
   dec
     .iter()
-    .zip_eq(sample.all_sample.iter())
-    .for_each(|(d, a)| result.add_mul_r_(&d[0], &a[0], par));
+    .flatten()
+    .zip_eq(sample.all_sample.iter().flatten())
+    .for_each(|(d, a)| result.add_mul_r_(&d, &a, par));
 
   result
   // for i in 0..dec.len() as usize {
@@ -296,7 +309,11 @@ fn tgsw_torus32_polynomial_decomposition_h(
   let offset = params.offset;
 
   // First, add offset to everyone
-  let buf: Vec<i32> = sample.coefs.iter().map(|c| c + offset as i32).collect();
+  let buf: Vec<i32> = sample
+    .coefs
+    .iter()
+    .map(|c| c.wrapping_add(offset as i32))
+    .collect();
 
   // Then, do the decomposition (TODO: in parallel)
   #[allow(clippy::needless_range_loop)]

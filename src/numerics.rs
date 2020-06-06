@@ -149,7 +149,7 @@ pub(crate) fn torus_polynomial_mul_r(
     // Original library uses the same size as the first polynomial for the result,
     // (ignoring all terms lower than (after) the `poly1.len()`-th element. Why?)
     .zip_eq(product.coefs.iter().take(poly1.len()))
-    .map(|(a, b)| a + b)
+    .map(|(a, b)| a.wrapping_add(*b))
     .collect();
 }
 
