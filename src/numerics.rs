@@ -227,14 +227,14 @@ where
   if power != q.len() {
     // Extend the polynomial to a power of 2 length
     q.extend(
-      std::iter::repeat(num_traits::identities::Zero::zero())
+      std::iter::repeat(Complex::zero())
         .take(power - q.len())
         .collect::<Vec<Complex<f64>>>(),
     );
   }
 
-  let mut p_out = vec![num_traits::identities::Zero::zero(); p.len()];
-  let mut q_out = vec![num_traits::identities::Zero::zero(); q.len()];
+  let mut p_out = vec![Complex::zero(); p.len()];
+  let mut q_out = vec![Complex::zero(); q.len()];
 
   // Create a FFT planner for a FFT
   let mut planner = FFTplanner::new(false);
@@ -248,7 +248,7 @@ where
     .map(|(p_c, q_c)| (p_c / (p.len() as f64).sqrt()) * (q_c / (q.len() as f64).sqrt()))
     .collect();
 
-  let mut res = vec![num_traits::identities::Zero::zero(); r.len()];
+  let mut res = vec![Complex::zero(); r.len()];
 
   // Create a FFT planner for the inverse FFT
   let fft = FFTplanner::new(true).plan_fft(r.len());
@@ -261,7 +261,7 @@ where
     .rev()
     .collect();
 
-  TorusPolynomial::from(&coefs)
+  TorusPolynomial { coefs }
 }
 
 /// X^{a} * source
