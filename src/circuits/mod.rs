@@ -7,4 +7,6 @@
 #[allow(clippy::module_inception)]
 pub mod circuits;
 pub mod utils;
+
+pub use circuits::*;
 pub use utils::{as_bits, AsBits};
