@@ -26,7 +26,7 @@ fn bootstrapping_benchmark(c: &mut Criterion) {
 
 criterion_group!(
   name = benches;
-  config = Criterion::default().sample_size(SAMPLE_SIZE).measurement_time(std::time::Duration::from_secs(50));
+  config = Criterion::default().sample_size(SAMPLE_SIZE).measurement_time(std::time::Duration::from_secs(75));
   targets = bootstrapping_benchmark
 );
 
