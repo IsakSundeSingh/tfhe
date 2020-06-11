@@ -13,7 +13,7 @@ fn bootstrapping_benchmark(c: &mut Criterion) {
   let (secret_key, cloud_key) = generate_keys(&params);
   let s = encrypt(message, &secret_key);
 
-  let mut group = c.benchmark_group("");
+  let mut group = c.benchmark_group("Homomorphic operations");
   group.throughput(Throughput::Bytes(2048));
   group.bench_function("bootstrapping", |b| {
     b.iter_batched(
