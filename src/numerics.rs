@@ -169,7 +169,7 @@ where
 
   for i in 0..a.coefs().len() {
     for j in 0..b.coefs().len() {
-      coefs[i + j] = coefs[i + j] + a_coefs[i] * b_coefs[j];
+      coefs[i + j] += a_coefs[i] * b_coefs[j]
     }
   }
 
