@@ -1,3 +1,5 @@
+//! A small module containing useful utility functions.
+
 /// A helper function for converting a byte to an array of bits.
 pub const fn as_bits(byte: u8) -> [bool; 8] {
   let bit7: bool = ((byte >> 7) & 0b1) == 1;
