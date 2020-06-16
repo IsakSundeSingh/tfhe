@@ -2,11 +2,12 @@ use tfhe::encryption::{
   decrypt, encrypt, generate_keys, generate_parameters, Parameters, SecurityLevel,
 };
 use tfhe::{
-  boots_mux,
   gates::{
-    boots_and, boots_andny, boots_andyn, boots_constant, boots_nand, boots_nor, boots_not,
-    boots_or, boots_orny, boots_oryn, boots_xnor, boots_xor,
+    and as boots_and, andny as boots_andny, andyn as boots_andyn, constant as boots_constant,
+    nand as boots_nand, nor as boots_nor, not as boots_not, or as boots_or, orny as boots_orny,
+    oryn as boots_oryn, xnor as boots_xnor, xor as boots_xor,
   },
+  mux as boots_mux,
 };
 
 #[test]

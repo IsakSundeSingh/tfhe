@@ -8,7 +8,7 @@
 //! themselves, as they have better control of the use-cases and can
 //! tailor the circuits to their needs.
 
-use crate::{boots_and, boots_constant, boots_mux, boots_or, boots_xor, CloudKey, LweSample};
+use crate::{and, constant, mux, or, xor, CloudKey, LweSample};
 use itertools::Itertools;
 
 /// Comparison gate.
@@ -16,8 +16,22 @@ use itertools::Itertools;
 /// Effectively does `a <= b`
 /// # Panics
 /// Panics if `a` and `b` are not the same length
+/// # Example
+/// ```no_run
+/// # use tfhe::circuits::compare;
+/// # use tfhe::encryption::{encrypt, decrypt, generate_keys, Parameters};
+/// # let params = Parameters::default();
+/// # let (secret_key, cloud_key) = generate_keys(&params);
+/// let a = vec![false, false];
+/// let b = vec![false, true]; // b is greater than a
+/// let encrypted_a: Vec<_> = a.into_iter().map(|x| encrypt(x, &secret_key)).collect();
+/// let encrypted_b: Vec<_> = b.into_iter().map(|x| encrypt(x, &secret_key)).collect();
+/// let encrypted_comparison = compare(&encrypted_a[..], &encrypted_b[..], &cloud_key);
+/// let comparison = decrypt(&encrypted_comparison, &secret_key);
+/// assert_eq!(comparison, true); // `a <= b` is true
+/// ```
 pub fn compare(a: &[LweSample], b: &[LweSample], key: &CloudKey) -> LweSample {
-  let one = boots_constant(true, key);
+  let one = constant(true, key);
   let mut carry = one;
   assert_eq!(a.len(), b.len());
   for i in 0..a.len() {
@@ -28,8 +42,8 @@ pub fn compare(a: &[LweSample], b: &[LweSample], key: &CloudKey) -> LweSample {
 
 /// Less than or equal to comparator with carry input.
 fn le(a: &LweSample, b: &LweSample, rim: &LweSample, key: &CloudKey) -> LweSample {
-  let condition = boots_xor(a, b, key);
-  boots_mux(&condition, b, rim, key)
+  let condition = xor(a, b, key);
+  mux(&condition, b, rim, key)
 }
 
 /// Homomorphic bitwise-equality operator
@@ -42,16 +56,16 @@ pub fn eq(a: &[LweSample], b: &[LweSample], key: &CloudKey) -> LweSample {
     bits.push(eq_bit(bit_a, bit_b, key));
   }
 
-  bits.iter().fold(boots_constant(true, key), |res, bit| {
-    boots_and(&res, bit, key)
-  })
+  bits
+    .iter()
+    .fold(constant(true, key), |res, bit| and(&res, bit, key))
 }
 
 /// Homomorphic bit-equality operator
 pub fn eq_bit(a: &LweSample, b: &LweSample, key: &CloudKey) -> LweSample {
-  let res = boots_xor(a, b, key);
-  let one = boots_constant(true, key);
-  boots_xor(&res, &one, key)
+  let res = xor(a, b, key);
+  let one = constant(true, key);
+  xor(&res, &one, key)
 }
 
 pub fn swap(_a: &LweSample, _b: &LweSample, _key: &CloudKey) -> LweSample {
@@ -61,7 +75,7 @@ pub fn swap(_a: &LweSample, _b: &LweSample, _key: &CloudKey) -> LweSample {
 /// Binary adder accepting two single encrypted binary digits.
 /// Returns the sum and the carry, respectively.
 pub fn half_adder(a: &LweSample, b: &LweSample, key: &CloudKey) -> (LweSample, LweSample) {
-  (boots_xor(a, b, key), boots_and(a, b, key))
+  (xor(a, b, key), and(a, b, key))
 }
 
 /// Binary full adder accepting two input signals and the initial carry-input.
@@ -72,12 +86,12 @@ pub fn full_adder(
   carry_in: &LweSample,
   key: &CloudKey,
 ) -> (LweSample, LweSample) {
-  let a_b_xor = boots_xor(a, b, key);
-  let sum = boots_xor(&a_b_xor, carry_in, key);
+  let a_b_xor = xor(a, b, key);
+  let sum = xor(&a_b_xor, carry_in, key);
   let carry = {
-    let carry_in_and_a_xor_b = boots_and(carry_in, &a_b_xor, key);
-    let a_and_b = boots_and(a, b, key);
-    boots_or(&carry_in_and_a_xor_b, &a_and_b, key)
+    let carry_in_and_a_xor_b = and(carry_in, &a_b_xor, key);
+    let a_and_b = and(a, b, key);
+    or(&carry_in_and_a_xor_b, &a_and_b, key)
   };
   (sum, carry)
 }
@@ -96,7 +110,7 @@ pub fn add(a: &[LweSample], b: &[LweSample], key: &CloudKey) -> (Vec<LweSample>,
   );
 
   a.iter().zip_eq(b.iter()).fold(
-    (Vec::with_capacity(a.len()), boots_constant(false, key)),
+    (Vec::with_capacity(a.len()), constant(false, key)),
     |(mut sum_bits, carry_in), (a, b)| {
       let (sum, carry_out) = full_adder(a, b, &carry_in, key);
       sum_bits.push(sum);

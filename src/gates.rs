@@ -4,25 +4,12 @@
 use crate::bootstrapping::tfhe_bootstrap;
 
 use crate::{
-  lwe::{CloudKey, LweSample, Parameters},
+  lwe::{CloudKey, LweSample},
   numerics::{encode_message, Torus32},
 };
 
-/** generate a new unititialized ciphertext */
-pub fn new_gate_bootstrapping_ciphertext(params: &Parameters) -> LweSample {
-  LweSample::new(&params.in_out_params)
-}
-
-/** generate a new unititialized ciphertext array of length nbelems */
-pub fn new_gate_bootstrapping_ciphertext_array(
-  nbelems: i32,
-  params: &Parameters,
-) -> Vec<LweSample> {
-  vec![new_gate_bootstrapping_ciphertext(&params); nbelems as usize]
-}
-
-/// Convert some constant to an encoded form so it can be used in the homomorphic operations with the ciphertexts.///
-pub fn boots_constant(value: bool, bk: &CloudKey) -> LweSample {
+/// Convert some constant to an encoded form so it can be used in the homomorphic operations with the ciphertexts.
+pub fn constant(value: bool, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
   const MU: Torus32 = encode_message(1, 8);
   LweSample {
@@ -32,8 +19,8 @@ pub fn boots_constant(value: bool, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Nand Gate */
-pub fn boots_nand(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// NAND gate
+pub fn nand(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,1/8) - ca - cb
@@ -53,8 +40,8 @@ pub fn boots_nand(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Or Gate:  */
-pub fn boots_or(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// OR gate
+pub fn or(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,1/8) + ca + cb
@@ -73,8 +60,8 @@ pub fn boots_or(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped And Gate: result = a and b */
-pub fn boots_and(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// AND gate
+pub fn and(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const AND: Torus32 = encode_message(-1, 8);
@@ -92,8 +79,8 @@ pub fn boots_and(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Xor Gate: result = a xor b */
-pub fn boots_xor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// XOR gate
+pub fn xor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const XOR: Torus32 = encode_message(1, 4);
@@ -111,8 +98,8 @@ pub fn boots_xor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Xnor Gate: result = (a==b) */
-pub fn boots_xnor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// XNOR gate
+pub fn xnor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   // use crate::bootstrap_internals::tfhe_bootstrap;
   let in_out_params = &bk.params.in_out_params;
 
@@ -131,13 +118,13 @@ pub fn boots_xnor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped Not Gate: result = not(a) */
-pub fn boots_not(ca: &LweSample, _bk: &CloudKey) -> LweSample {
+/// NOT gate
+pub fn not(ca: &LweSample, _bk: &CloudKey) -> LweSample {
   !ca.clone()
 }
 
-/** bootstrapped Nor Gate: result = not(a or b) */
-pub fn boots_nor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// NOR gate
+pub fn nor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const NOR: Torus32 = encode_message(-1, 8);
@@ -155,8 +142,9 @@ pub fn boots_nor(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped AndNY Gate: not(a) and b */
-pub fn boots_andny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// ANDNY gate (not(a) and b)
+/// Performs the AND gate but negates the first argument.
+pub fn andny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   // Compute: (0,-1/8) - ca + cb
@@ -173,8 +161,9 @@ pub fn boots_andny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped AndYN Gate: a and not(b) */
-pub fn boots_andyn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// ANDYN gate (a and not(b))
+/// Performs the AND gate but negates the second argument.
+pub fn andyn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const ANDYN: Torus32 = encode_message(-1, 8);
@@ -192,8 +181,9 @@ pub fn boots_andyn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped OrNY Gate: not(a) or b */
-pub fn boots_orny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// ORNY gate (not(a) or b)
+/// Performs the OR gate but negates the first argument.
+pub fn orny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const ORNY: Torus32 = encode_message(1, 8);
@@ -211,8 +201,9 @@ pub fn boots_orny(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   }
 }
 
-/** bootstrapped OrYN Gate: a or not(b) */
-pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
+/// ORYN gate (a OR not(b))
+/// Performs the OR gate but negates the second argument.
+pub fn oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
   let in_out_params = &bk.params.in_out_params;
 
   const ORYN: Torus32 = encode_message(1, 8);
@@ -245,10 +236,10 @@ pub fn boots_oryn(ca: &LweSample, cb: &LweSample, bk: &CloudKey) -> LweSample {
 /// # ;
 /// ```
 #[allow(unused)]
-pub fn boots_mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> LweSample {
+pub fn mux(a: &LweSample, b: &LweSample, c: &LweSample, bk: &CloudKey) -> LweSample {
   #[cfg(not(feature = "bootstrapping"))]
   {
-    panic!("Mux gate cannot run without bootstrapping");
+    panic!("Mux gate cannot run without the bootstrapping feature enabled");
   }
 
   #[cfg(feature = "bootstrapping")]
