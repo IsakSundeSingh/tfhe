@@ -53,6 +53,12 @@ It is a very rough port and not all of the code is idiomatic Rust. Few of the op
 
 This is developed as a research project, so I would not recommend to use this for anything more than experimental use.
 
+## Contributions
+
+Contributions both in terms of issues and pull requests are welcome.
+Please use the issue templates when filling out an issue.
+Do note that the project is experimental and has the scars from this as well.
+
 ## License
 
-I am unsure how to license this as it's a port of the TFHE library, however not everything is a direct port and this library has some added features along with some different naming. The original library is licensed under Apache 2.0.
+This project is a Rust port of the C++ library [TFHE](https://github.com/tfhe/tfhe), and is licensed under the Apache 2.0 License.
