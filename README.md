@@ -53,6 +53,8 @@ It is a very rough port and not all of the code is idiomatic Rust. Few of the op
 
 This is developed as a research project, so I would not recommend to use this for anything more than experimental use.
 
+I am not a cryptologist.
+
 ## Contributions
 
 Contributions both in terms of issues and pull requests are welcome.
