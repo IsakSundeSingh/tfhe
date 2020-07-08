@@ -2,7 +2,7 @@
 
 [![Continuous Integration](https://github.com/IsakSundeSingh/tfhe/workflows/Continuous%20Integration/badge.svg)](https://github.com/IsakSundeSingh/tfhe/actions)
 
-TFHE is a Rust port of the C++ library [TFHE](https://github.com/tfhe/tfhe).
+TFHE is a Rust port of the C++ library [TFHE](https://github.com/tfhe/tfhe). Check out the [overview paper](https://eprint.iacr.org/2018/421.pdf) for a more in-depth explanation of the scheme.
 
 ## Usage
 

@@ -7,15 +7,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TLweParameters {
-  /// a power of 2: degree of the polynomials
+  /// Degree of the polynomials, must be a power of 2
   pub n: i32,
-  /// number of polynomials in the mask
+  /// Number of polynomials in the mask
   pub k: i32,
-  /// minimal noise s.t. the sample is secure
+  /// Minimal noise s.t. the sample is secure
   pub alpha_min: f64,
-  /// maximal noise s.t. we can decrypt
+  /// Maximal noise s.t. decryption is possible
   pub alpha_max: f64,
-  /// lwe params if one extracts
+  /// Lwe parameters if one extracts
   pub extracted_lweparams: LweParams,
 }
 
@@ -34,7 +34,7 @@ impl TLweParameters {
 pub struct TLweKey {
   /// Parameters of the key
   pub(crate) params: TLweParameters,
-  /// the key (i.e k binary polynomials)
+  /// The key (i.e k binary polynomials)
   pub(crate) key: Vec<IntPolynomial>,
 }
 
@@ -66,11 +66,11 @@ impl TLweKey {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TLweSample {
-  /// array of length k+1: mask + right term
+  /// Array of length k+1: mask + right term
   pub(crate) a: Vec<TorusPolynomial>,
   // This field was actually the last element of `a`
   // pub(crate) b: TorusPolynomial,
-  /// avg variance of the sample
+  /// Average variance of the sample
   pub(crate) current_variance: f64,
   pub(crate) k: i32,
 }

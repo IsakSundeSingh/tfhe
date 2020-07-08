@@ -248,15 +248,10 @@ impl Default for Parameters {
 pub struct CloudKey {
   pub(crate) params: Parameters,
   pub bk: LweBootstrappingKey,
-  // bk_fft: LweBootstrappingKeyFFT,
 }
 
 impl CloudKey {
-  pub fn new(
-    params: Parameters,
-    bk: LweBootstrappingKey,
-    // bk_fft: LweBootstrappingKeyFFT,
-  ) -> Self {
+  pub fn new(params: Parameters, bk: LweBootstrappingKey) -> Self {
     Self { params, bk }
   }
 }
@@ -301,6 +296,10 @@ impl LweKey {
 
     let n = params.n;
     let mut rng = rand::thread_rng();
+
+    // Turns out, it is actually faster to use `Vec<i32>` instead of
+    // `Vec<bool>` even though it uses less space and the key
+    // is binary.
     let key = (0..n).map(|_| if rng.gen() { 1 } else { 0 }).collect();
 
     Self {
@@ -358,15 +357,15 @@ impl LweKey {
     result.current_variance = alpha * alpha;
   }
 
-  /**
-   * This function computes the decryption of sample by using key
-   * The constant Msize indicates the message space and is used to approximate the phase
-   */
+  /// This function computes the decryption of sample by using key
+  /// The `message_size` indicates the message space and is used to approximate the phase
   pub(crate) fn decrypt(&self, sample: &LweSample, message_size: i32) -> Torus32 {
     let phi = lwe_phase(sample, self);
     approximate_phase(phi, message_size)
   }
 
+  /// Perform the extraction procedure to retrieve an `LweKey` from the
+  /// given `TLweKey`.
   pub(crate) fn extract(params: &LweParams, key: &TLweKey) -> Self {
     let mut extracted_key = Self {
       params: params.clone(),
@@ -406,16 +405,15 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   sample.b.wrapping_sub(axs)
 }
 
-//this pub structure contains Lwe parameters
-//this pub structure is constant (cannot be modified once initialized):
-//the pointer to the param can be passed directly
-//to all the Lwe keys that use these params.
+/// Parameters used for the [`LweKey`](struct.LweKey.html)
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LweParams {
   pub(crate) n: i32,
-  /// le plus petit bruit tq sur
+
+  /// The minimum noise level of an Lwe-sample
   pub(crate) alpha_min: f64,
-  /// le plus gd bruit qui permet le déchiffrement
+
+  /// The greatest noise level that still allows decryption
   alpha_max: f64,
 }
 
@@ -433,17 +431,17 @@ impl LweParams {
 /// Is embedded in the [`CloudKey`](struct.CloudKey.html) key.
 #[derive(Clone, Deserialize, Serialize)]
 pub struct LweBootstrappingKey {
-  /// paramètre de l'input et de l'output. key: s
+  /// Input- and output-parameters. key: s
   pub(crate) in_out_params: LweParams,
-  /// params of the Gsw elems in bk. key: s"
+  /// Parameters for the GSW elements in `bk`. key: s"
   pub(crate) bk_params: TGswParams,
-  /// params of the accum variable key: s"
+  /// Parameters for the accumulator variable. key: s"
   pub(crate) accum_params: TLweParameters,
-  /// params after extraction: key: s'
+  /// Parameters after extraction: key: s'
   pub(crate) extract_params: LweParams,
-  /// the bootstrapping key (s->s")
+  /// The bootstrapping key (s->s")
   pub(crate) bk: Vec<TGswSample>,
-  /// the keyswitch key (s'->s)
+  /// The keyswitch key (s'->s)
   pub(crate) ks: LweKeySwitchKey,
 }
 
@@ -506,11 +504,11 @@ pub struct LweKeySwitchKey {
   base: i32,
   /// params of the output key s
   out_params: LweParams,
-  /// array which contains all Lwe samples of size n*l*base
   // ks0_raw: Vec<LweSample>,
   // of size n*l points to an array ks0_raw whose boxes are spaces basic positions
   // ks1_raw: Vec<Vec<LweSample>>,
-  // the keyswitch elements: a n.l.base matrix
+  // the keyswitch elements: a n*l*base matrix
+  /// Matrix containing all Lwe samples of size n*l*base
   ks: Vec<Vec<Vec<LweSample>>>,
   // of size n points to ks1 an array whose boxes are spaced by ell positions
 }
@@ -550,11 +548,9 @@ impl LweKeySwitchKey {
         self.ks[i][j][0].b = 0;
         // lweNoiselessTrivial(&result->ks[i][j][0], 0, out_key->params);
         for h in 1..self.base as usize {
-          //    Torus32 mess = (in_key->key[i] * h)*(1<<(32-(j+1)*basebit));
           let message: Torus32 =
             (in_key.key[i] * h as i32).wrapping_mul(1 << (32 - (j + 1) * self.base_bit as usize));
           out_key.encrypt_with_external_noise(&mut self.ks[i][j][h], message, noise[index], alpha);
-          //    lweSymEncryptWithExternalNoise(&result->ks[i][j][h], mess, noise[index], alpha, out_key);
           index += 1;
         }
       }

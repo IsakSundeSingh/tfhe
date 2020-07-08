@@ -7,13 +7,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TGswParams {
-  /// decomp length
+  /// Decomposition length
   l: i32,
 
   /// log_2(Bg)
   bg_bit: i32,
 
-  /// decomposition base (must be a power of 2)
+  /// Decomposition base (must be a power of 2)
   bg: i32,
 
   /// Bg/2
@@ -22,10 +22,10 @@ pub struct TGswParams {
   /// Bg-1
   mask_mod: u32,
 
-  /// Params of each row
+  /// Parameters of each row
   pub(crate) tlwe_params: TLweParameters,
 
-  /// number of rows = (k+1)*l
+  /// Number of rows = (k+1)*l
   kpl: i32,
 
   /// powers of Bgbit
@@ -68,10 +68,10 @@ impl TGswParams {
 }
 
 pub struct TGswKey {
-  /// the parameters
+  /// Parameters of the TGswKey
   pub(crate) params: TGswParams,
 
-  /// the tlwe params of each rows
+  // the tlwe params of each rows
   // tlwe_params: TLweParameters,
   pub(crate) tlwe_key: TLweKey,
 }
@@ -96,7 +96,7 @@ impl TGswKey {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TGswSample {
-  /// (k+1)l TLwe Sample (THIS IS A MATRIX)
+  /// (k+1)*l TLwe Sample
   all_sample: Vec<Vec<TLweSample>>,
   /// Horizontal blocks (l lines) of TGSW matrix
   // bloc_sample: Vec<TLweSample>,
@@ -276,7 +276,7 @@ pub(crate) fn tgsw_extern_mul_to_tlwe(
   //   }
 }
 
-/// Fonction de decomposition
+/// Decompose a TLwe-sample by the given TGsw parameters
 fn tgsw_tlwe_decomposition_h(sample: &TLweSample, params: &TGswParams) -> Vec<Vec<IntPolynomial>> {
   let tlwe_params = &params.tlwe_params;
   let k = tlwe_params.k;
