@@ -8,13 +8,13 @@ use itertools::Itertools;
 
 /// An element `x : Modulo` of the real torus is represented by the integer
 /// `(2^32 * x).modulo(2^32)`, where addition, subtraction and integer
-/// operations are native. Modulo 1 is mapped to modulo [2^32](constant.TWO_32.html),
+/// operations are native. Modulo 1 is mapped to modulo [2^32](TWO_32),
 /// which is also native. This performs better than using floating-point values,
 /// where modulo 1 is not a natural operation.
 pub type Torus32 = i32;
 
 /// 2 ^ 32 represented as an `f64`.
-const TWO_32: f64 = 4_294_967_296_f64;
+pub const TWO_32: f64 = 4_294_967_296_f64;
 
 /// A trait for integral values which can perform the modulo operation.
 pub(crate) trait Modulo<RHS = Self> {

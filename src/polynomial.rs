@@ -1,6 +1,6 @@
 //! Contains traits, types and functions for working with integer polynomials.
 //!
-//! The [Polynomial](trait.Polynomial.html) trait is the core of the module,
+//! The [Polynomial] trait is the core of the module,
 //! and is used throughout the crate.
 
 use crate::numerics::{Modulo, Torus32};

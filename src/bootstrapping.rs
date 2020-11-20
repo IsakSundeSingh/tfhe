@@ -1,6 +1,6 @@
 //! Module containing the bootstrapping procedure.
 //!
-//! The bootstrapping function [`tfhe_bootstrap`](fn.tfhe_bootstrap.html) can
+//! The bootstrapping function [`tfhe_bootstrap`](tfhe_bootstrap()) can
 //! be used externally, but it should not be required unless you're implementing specific
 //! functionality such as custom gates and want to reduce the number of bootstrapping
 //! operations you perform.

@@ -1,9 +1,9 @@
 //! Top-level encryption system types.
 //!
-//! Contains the [ciphertext](struct.LweSample.html),
-//! the [key parameters](struct.Parameters.html),
-//! the [secret key](struct.SecretKey.html)
-//! and the [cloud key](struct.CloudKey.html).
+//! Contains the [ciphertext](LweSample),
+//! the [key parameters](Parameters),
+//! the [secret key](SecretKey)
+//! and the [cloud key](CloudKey).
 
 use crate::numerics::{approximate_phase, gaussian32, Torus32};
 use crate::tgsw::{TGswKey, TGswParams, TGswSample};
@@ -234,7 +234,7 @@ impl Parameters {
 
 impl Default for Parameters {
   /// Returns parameters for the standard security level
-  /// ([`SecurityLevel`](../encryption/enum.SecurityLevel.html)) of around 128 bits
+  /// ([`SecurityLevel`](super::encryption::SecurityLevel)) of around 128 bits
   fn default() -> Self {
     Self::with(SecurityLevel::Bit128)
   }
@@ -274,7 +274,7 @@ impl SecretKey {
 }
 
 /// Actual key used for encryption and decryption.
-/// **Not** safe to share. Embedded within the [`SecretKey`](struct.SecretKey.html) key.
+/// **Not** safe to share. Embedded within the [`SecretKey`] key.
 /// **Warning**: although it implements serialization and deserialization, it is
 /// not intended to be shared, and this functionality is only implemented to
 /// store the key privately.
@@ -405,7 +405,7 @@ pub(crate) fn lwe_phase(sample: &LweSample, key: &LweKey) -> Torus32 {
   sample.b.wrapping_sub(axs)
 }
 
-/// Parameters used for the [`LweKey`](struct.LweKey.html)
+/// Parameters used for the [`LweKey`]
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LweParams {
   pub(crate) n: i32,
@@ -428,7 +428,7 @@ impl LweParams {
 }
 
 /// Key used for bootstrapping ciphertexts, safe to share.
-/// Is embedded in the [`CloudKey`](struct.CloudKey.html) key.
+/// Is embedded in the [`CloudKey`] key.
 #[derive(Clone, Deserialize, Serialize)]
 pub struct LweBootstrappingKey {
   /// Input- and output-parameters. key: s
