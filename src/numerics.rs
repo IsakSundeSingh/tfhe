@@ -5,6 +5,7 @@
 use crate::polynomial::{IntPolynomial, Polynomial, TorusPolynomial};
 
 use itertools::Itertools;
+use rustfft::FftDirection;
 
 /// An element `x : Modulo` of the real torus is represented by the integer
 /// `(2^32 * x).modulo(2^32)`, where addition, subtraction and integer
@@ -191,7 +192,7 @@ where
   // Algorithm found at https://math.stackexchange.com/questions/764727/concrete-fft-polynomial-multiplication-example
   use num_traits::Zero;
   use rustfft::num_complex::Complex;
-  use rustfft::FFTplanner;
+  use rustfft::FftPlanner;
 
   let degree = a.degree() + b.degree();
   let mut p: Vec<_> = a
@@ -230,28 +231,26 @@ where
     );
   }
 
-  let mut p_out = vec![Complex::zero(); p.len()];
-  let mut q_out = vec![Complex::zero(); q.len()];
-
   // Create a FFT planner for a FFT
-  let mut planner = FFTplanner::new(false);
-  let fft = planner.plan_fft(p.len());
-  fft.process(&mut p, &mut p_out);
-  fft.process(&mut q, &mut q_out);
+  let mut planner = FftPlanner::new();
+  let fft = planner.plan_fft(p.len(), FftDirection::Forward);
+  fft.process(&mut p);
+  fft.process(&mut q);
 
-  let mut r: Vec<_> = p_out
+  let p_len = p.len();
+  let q_len = q.len();
+
+  let mut r: Vec<_> = p
     .into_iter()
-    .zip_eq(q_out.into_iter())
-    .map(|(p_c, q_c)| (p_c / (p.len() as f64).sqrt()) * (q_c / (q.len() as f64).sqrt()))
+    .zip_eq(q.into_iter())
+    .map(|(p_c, q_c)| (p_c / (p_len as f64).sqrt()) * (q_c / (q_len as f64).sqrt()))
     .collect();
 
-  let mut res = vec![Complex::zero(); r.len()];
-
   // Create a FFT planner for the inverse FFT
-  let fft = FFTplanner::new(true).plan_fft(r.len());
-  fft.process(&mut r, &mut res);
+  let fft = FftPlanner::new().plan_fft(r.len(), FftDirection::Inverse);
+  fft.process(&mut r);
 
-  let coefs: Vec<i32> = res
+  let coefs: Vec<i32> = r
     .into_iter()
     .take(degree + 1)
     .map(|x| x.re.round() as i32)
