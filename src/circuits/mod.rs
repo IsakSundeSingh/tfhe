@@ -9,4 +9,4 @@ pub mod circuits;
 pub mod utils;
 
 pub use circuits::*;
-pub use utils::{as_bits, AsBits};
+pub use utils::{to_bits, AsBits};
